@@ -1,0 +1,4269 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QCM Durabilité EPFL</title>
+    <style>
+:root {
+  --bg: #f6f7fb;
+  --card: #fff;
+  --text: #202124;
+  --muted: #667085;
+  --blue: #2563eb;
+  --border: #e5e7eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  position: sticky;
+  top: 0;
+  background: #111827;
+  color: white;
+  padding: 18px 22px;
+  z-index: 2;
+  box-shadow: 0 4px 20px #0002;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+header p {
+  margin: 6px 0 0;
+  color: #d1d5db;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+select,
+button,
+input {
+  font: inherit;
+}
+
+select,
+input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: white;
+  min-width: 220px;
+}
+
+main {
+  max-width: 1000px;
+  margin: 24px auto;
+  padding: 0 16px 60px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 4px 16px #0000000d;
+}
+
+.stat b {
+  font-size: 26px;
+}
+
+.stat span {
+  display: block;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 22px;
+  margin: 18px 0;
+  box-shadow: 0 8px 24px #0000000d;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.question {
+  font-size: 19px;
+  font-weight: 750;
+  line-height: 1.35;
+  margin: 10px 0 16px;
+}
+
+.choice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin: 9px 0;
+  cursor: pointer;
+  background: #fafafa;
+}
+
+.choice:hover {
+  background: #f3f4f6;
+}
+
+.choice input {
+  min-width: auto;
+  margin-top: 3px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.verify {
+  background: var(--blue);
+  color: white;
+}
+
+.reset {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.feedback {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-weight: 700;
+  display: none;
+}
+
+.good {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.bad {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.explain {
+  font-weight: 400;
+  margin-top: 8px;
+  color: #374151;
+  line-height: 1.45;
+}
+
+.correctChoice {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.wrongChoice {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.missedChoice {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+@media (max-width: 700px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  select,
+  input {
+    min-width: 100%;
+  }
+}
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>QCM Durabilité EPFL</h1>
+      <p>
+        Coche les bonnes réponses puis clique sur <b>Vérifier</b> après chaque
+        question.
+      </p>
+      <div class="controls">
+        <select id="weekFilter">
+          <option value="all">Toutes les semaines</option>
+        </select>
+        <input id="search" placeholder="Rechercher une question...">
+        <button class="btn reset" onclick="resetAll()">Réinitialiser</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="stats">
+        <div class="stat">
+          <b id="total">0</b>
+          <span>questions affichées</span>
+        </div>
+        <div class="stat">
+          <b id="done">0</b>
+          <span>questions vérifiées</span>
+        </div>
+        <div class="stat">
+          <b id="score">0%</b>
+          <span>score actuel</span>
+        </div>
+      </div>
+
+      <div id="quiz"></div>
+    </main>
+
+    <script>
+const QUESTIONS = [
+  {
+    "id": "2.1.1",
+    "week": "Semaine 2 – Histoire des techniques",
+    "question": "Lesquelles des inventions suivantes ont eu un impact significatif"
+      + "sur la société moderne ?",
+    "choices": [
+      {
+        "text": "Machine à vapeur.",
+        "correct": true
+      },
+      {
+        "text": "Téléphone.",
+        "correct": true
+      },
+      {
+        "text": "Crayon à papier.",
+        "correct": true
+      },
+      {
+        "text": "Pilule contraceptive.",
+        "correct": true
+      }
+    ],
+    "answer": "Toutes les propositions.",
+    "justification": "Vision pluraliste : les grandes machines comme les techniques"
+      + "ordinaires peuvent avoir des impacts majeurs."
+  },
+
+  {
+    "id": "2.1.2",
+    "week": "Semaine 2 – Histoire des techniques",
+    "question": "Lesquelles, parmi les personnes suivantes, utilisent des techniques"
+      + "?",
+    "choices": [
+      {
+        "text": "Jardinier qui plante des tomates.",
+        "correct": true
+      },
+      {
+        "text": "Étudiante qui révise des théorèmes.",
+        "correct": true
+      },
+      {
+        "text": "Client qui mange un plat.",
+        "correct": true
+      },
+      {
+        "text": "Conductrice de train à vapeur.",
+        "correct": true
+      },
+      {
+        "text": "Homme du paléolithique qui marche nu dans la forêt.",
+        "correct": true
+      },
+      {
+        "text": "Chasseuse-cueilleuse qui allume un feu avec des silex.",
+        "correct": true
+      }
+    ],
+    "answer": "Toutes les propositions.",
+    "justification": "Une technique peut être corporelle, intellectuelle, matérielle"
+      + "ou pratique."
+  },
+
+  {
+    "id": "2.1.3",
+    "week": "Semaine 2 – Histoire des techniques",
+    "question": "Quelles affirmations sont vraies ?",
+    "choices": [
+      {
+        "text": "Nous vivons surtout dans un monde de nouvelles techniques.",
+        "correct": false
+      },
+      {
+        "text": "Chaque époque assemble anciennes et nouvelles techniques.",
+        "correct": true
+      },
+      {
+        "text": "Les nouvelles techniques sont souvent utiles dès leur invention.",
+        "correct": false
+      },
+      {
+        "text": "L’utilité d’une technique se comprend dans sa temporalité.",
+        "correct": true
+      }
+    ],
+    "answer": "Affirmations 2 et 4.",
+    "justification": "Les techniques doivent être étudiées dans leur durée : usages,"
+      + "diffusion, maintenance, transformations."
+  },
+
+  {
+    "id": "2.2.1",
+    "week": "Semaine 2 – Histoire des techniques",
+    "question": "Quelle est la différence entre invention et innovation ?",
+    "choices": [
+      {
+        "text": "Innovation = amélioration de l’existant.",
+        "correct": false
+      },
+      {
+        "text": "Innovation = production et mise sur le marché d’une invention.",
+        "correct": true
+      },
+      {
+        "text": "Innovation = usages après commercialisation.",
+        "correct": false
+      }
+    ],
+    "answer": "L’invention est la création ; l’innovation est la production et mise"
+      + "sur le marché.",
+    "justification": "L’innovation suppose une diffusion sociale ou économique. 2 "
+      + "Durabilité EPFL"
+  },
+
+  {
+    "id": "2.2.2",
+    "week": "Semaine 2 – Histoire des techniques",
+    "question": "Quelles affirmations sont vraies sur les techniques énergétiques ?",
+    "choices": [
+      {
+        "text": "Elles se substituent les unes aux autres.",
+        "correct": false
+      },
+      {
+        "text": "Le charbon est toujours très utilisé au XXIe siècle.",
+        "correct": true
+      },
+      {
+        "text": "Le pétrole a presque remplacé le charbon.",
+        "correct": false
+      },
+      {
+        "text": "Elles s’additionnent au fil du temps.",
+        "correct": true
+      }
+    ],
+    "answer": "Affirmations 2 et 4.",
+    "justification": "Les techniques énergétiques se superposent plus qu’elles ne se"
+      + "remplacent."
+  },
+
+  {
+    "id": "2.2.3",
+    "week": "Semaine 2 – Histoire des techniques",
+    "question": "Quelles étapes font partie de la vie des techniques ?",
+    "choices": [
+      {
+        "text": "Recherche fondamentale.",
+        "correct": true
+      },
+      {
+        "text": "Maintenance et réparation.",
+        "correct": true
+      },
+      {
+        "text": "Obsolescence et recyclage.",
+        "correct": true
+      },
+      {
+        "text": "Substitution totale.",
+        "correct": false
+      }
+    ],
+    "answer": "Les trois premières.",
+    "justification": "La substitution totale n’est pas une étape du modèle : le cours"
+      + "insiste sur l’addition."
+  },
+
+  {
+    "id": "2.2.4",
+    "week": "Semaine 2 – Histoire des techniques",
+    "question": "Remettre dans l’ordre les étapes de la vie d’une technique.",
+    "choices": [
+      {
+        "text": "Afficher / vérifier la réponse",
+        "correct": true
+      }
+    ],
+    "answer": "Invention →Innovation →Usages →Maintenance et réparation.",
+    "justification": "La vie technique continue après invention et mise sur le"
+      + "marché."
+  },
+
+  {
+    "id": "2.2.5",
+    "week": "Semaine 2 – Histoire des techniques",
+    "question": "Quelles affirmations sur la maintenance et la réparation sont justes"
+      + "?",
+    "choices": [
+      {
+        "text": "Elles sont souvent négligées au profit de l’innovation.",
+        "correct": true
+      },
+      {
+        "text": "Elles ne sont pas nécessaires aux infrastructures modernes.",
+        "correct": false
+      },
+      {
+        "text": "Elles reçoivent plus d’investissements que l’innovation.",
+        "correct": false
+      },
+      {
+        "text": "Elles sont essentielles à la durabilité des infrastructures.",
+        "correct": true
+      }
+    ],
+    "answer": "Affirmations 1 et 4.",
+    "justification": "La maintenance est invisibilisée mais centrale pour prolonger"
+      + "la durée de vie."
+  },
+
+  {
+    "id": "2.2.6",
+    "week": "Semaine 2 – Histoire des techniques",
+    "question": "Quels défis ou opportunités sont associés à la maintenance ?",
+    "choices": [
+      {
+        "text": "L’innovation doit prendre en compte maintenance et cycle de vie.",
+        "correct": true
+      },
+      {
+        "text": "La maintenance est inutile pour les infrastructures anciennes.",
+        "correct": false
+      },
+      {
+        "text": "La maintenance demande moins de main-d’œuvre que l’innovation.",
+        "correct": false
+      },
+      {
+        "text": "L’innovation doit intégrer l’aspect financier de la maintenance.",
+        "correct": true
+      }
+    ],
+    "answer": "Affirmations 1 et 4.",
+    "justification": "Une technique durable doit intégrer dès la conception ses coûts"
+      + "et besoins de maintenance."
+  },
+
+
+
+  {
+    "id": "3.1.1",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quels sont les impacts de la croissance démographique humaine sur la"
+      + "planète ?",
+    "choices": [
+      {
+        "text": "Augmentation des besoins en ressources.",
+        "correct": true
+      },
+      {
+        "text": "Diminution de la production agricole.",
+        "correct": false
+      },
+      {
+        "text": "Augmentation de l’urbanisation.",
+        "correct": true
+      },
+      {
+        "text": "Réduction de la consommation énergétique.",
+        "correct": false
+      }
+    ],
+    "answer": "Augmentation des ressources et de l’urbanisation.",
+    "justification": "La croissance démographique augmente les besoins matériels,"
+      + "énergétiques et l’occupation des sols."
+  },
+
+  {
+    "id": "3.1.2",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quels facteurs ont contribué à l’augmentation de la consommation"
+      + "énergétique depuis la révolution industrielle ?",
+    "choices": [
+      {
+        "text": "Augmentation des usages industriels.",
+        "correct": true
+      },
+      {
+        "text": "La pandémie du COVID.",
+        "correct": false
+      },
+      {
+        "text": "Croissance de la population.",
+        "correct": true
+      },
+      {
+        "text": "L’augmentation du nombre de barrages.",
+        "correct": false
+      }
+    ],
+    "answer": "Usages industriels et croissance de la population.",
+    "justification": "La hausse vient surtout de l’augmentation de la population et"
+      + "des usages énergé- tiques par personne."
+  },
+
+  {
+    "id": "3.1.3",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quelles stratégies peut-on mettre en place pour gérer durablement"
+      + "les ressources comme le cuivre ?",
+    "choices": [
+      {
+        "text": "Réduction de l’utilisation des ressources premières.",
+        "correct": true
+      },
+      {
+        "text": "Électrifier le parc automobile.",
+        "correct": false
+      },
+      {
+        "text": "Utiliser d’autres ressources à la place.",
+        "correct": true
+      },
+      {
+        "text": "Recyclage des matériaux.",
+        "correct": true
+      }
+    ],
+    "answer": "Réduire, substituer et recycler.",
+    "justification": "L’électrification augmente fortement la demande en cuivre ; la"
+      + "gestion durable vise à limiter l’extraction primaire."
+  },
+
+  {
+    "id": "3.1.4",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quels sont les impacts environnementaux de l’activité humaine sur la"
+      + "planète ?",
+    "choices": [
+      {
+        "text": "Perte de biodiversité.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation des gaz à effet de serre.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation de la température de surface.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation de l’acidification des océans.",
+        "correct": true
+      }
+    ],
+    "answer": "Toutes les propositions.",
+    "justification": "La grande accélération touche les dimensions physiques,"
+      + "chimiques et biologiques du système Terre. 4  Durabilité EPFL"
+  },
+
+  {
+    "id": "3.2.1",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quels facteurs influencent le climat terrestre sur des échelles de"
+      + "temps de millions d’années ?",
+    "choices": [
+      {
+        "text": "Volcanisme.",
+        "correct": true
+      },
+      {
+        "text": "Irradiance solaire.",
+        "correct": false
+      },
+      {
+        "text": "Chutes de météorites.",
+        "correct": false
+      },
+      {
+        "text": "Transfert de carbone entre réservoirs.",
+        "correct": true
+      }
+    ],
+    "answer": "Volcanisme et transferts de carbone entre réservoirs.",
+    "justification": "À grande échelle de temps, le climat dépend fortement du CO2"
+      + "atmosphérique, contrôlé par volcanisme, tectonique et échanges"
+      + "entre réservoirs."
+  },
+
+  {
+    "id": "3.2.2",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quelles planètes présentent un effet de serre significatif ?",
+    "choices": [
+      {
+        "text": "Mercure.",
+        "correct": false
+      },
+      {
+        "text": "Terre.",
+        "correct": true
+      },
+      {
+        "text": "Mars.",
+        "correct": false
+      },
+      {
+        "text": "Vénus.",
+        "correct": true
+      }
+    ],
+    "answer": "Terre et Vénus.",
+    "justification": "La Terre a un effet de serre naturel essentiel ; Vénus a un"
+      + "effet de serre massif. Mars possède un effet de serre faible."
+  },
+
+  {
+    "id": "3.2.3",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quels éléments contribuent à l’équilibre énergétique de la Terre ?",
+    "choices": [
+      {
+        "text": "Énergie géothermique.",
+        "correct": false
+      },
+      {
+        "text": "Énergie absorbée par les océans.",
+        "correct": false
+      },
+      {
+        "text": "Énergie infrarouge émise par la surface.",
+        "correct": true
+      },
+      {
+        "text": "Énergie solaire réfléchie.",
+        "correct": true
+      }
+    ],
+    "answer": "Énergie infrarouge émise et énergie solaire réfléchie.",
+    "justification": "L’équilibre énergétique dépend du rayonnement solaire entrant,"
+      + "de la part réfléchie et du rayonnement infrarouge sortant."
+  },
+
+  {
+    "id": "3.2.4",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Comment le volcanisme influence-t-il le climat terrestre ?",
+    "choices": [
+      {
+        "text": "Diminution de l’albédo terrestre.",
+        "correct": false
+      },
+      {
+        "text": "Réchauffement par émission de chaleur.",
+        "correct": false
+      },
+      {
+        "text": "Refroidissement par aérosols de sulfate.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation du CO2 atmosphérique.",
+        "correct": false
+      }
+    ],
+    "answer": "Refroidissement par aérosols de sulfate.",
+    "justification": "À court terme, les éruptions volcaniques produisent des"
+      + "aérosols sulfatés qui réfléchissent une partie du rayonnement"
+      + "solaire. 5  Durabilité EPFL"
+  },
+
+  {
+    "id": "3.2.5",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quels gaz suivants contribuent au forçage radiatif selon le GIEC ?",
+    "choices": [
+      {
+        "text": "Dioxyde de soufre et ammoniac.",
+        "correct": false
+      },
+      {
+        "text": "Ozone et vapeur d’eau stratosphérique.",
+        "correct": true
+      },
+      {
+        "text": "Méthane et protoxyde d’azote.",
+        "correct": true
+      },
+      {
+        "text": "Argon et néon.",
+        "correct": false
+      }
+    ],
+    "answer": "Ozone, vapeur d’eau stratosphérique, méthane et protoxyde d’azote.",
+    "justification": "Ces gaz contribuent au forçage radiatif car ils interviennent"
+      + "dans l’absorption du rayonnement infrarouge."
+  },
+
+  {
+    "id": "3.2.6",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "À quoi correspondent les valeurs numériques des RCP ?",
+    "choices": [
+      {
+        "text": "À la concentration de CO2 dans l’atmosphère (en ppm).",
+        "correct": false
+      },
+      {
+        "text": "À l’augmentation de la température globale (en ◦C).",
+        "correct": false
+      },
+      {
+        "text": "Au forçage radiatif (en W/m2).",
+        "correct": true
+      },
+      {
+        "text": "À des hypothèses démographiques, économiques ou technologiques"
+          + "(SSP).",
+        "correct": false
+      }
+    ],
+    "answer": "Au forçage radiatif en W/m2.",
+    "justification": "RCP2.6, RCP4.5 et RCP8.5 désignent des niveaux de forçage"
+      + "radiatif à la fin du siècle."
+  },
+
+  {
+    "id": "3.2.7",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quelles conséquences globales sont attendues avec un réchauffement"
+      + "de plusieurs degrés ?",
+    "choices": [
+      {
+        "text": "Augmentation du niveau des mers.",
+        "correct": true
+      },
+      {
+        "text": "Réduction des précipitations hivernales.",
+        "correct": false
+      },
+      {
+        "text": "Augmentation des phénomènes de sécheresse.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation de la fréquence des vagues de chaleur.",
+        "correct": true
+      }
+    ],
+    "answer": "Niveau des mers, sécheresses et vagues de chaleur.",
+    "justification": "Le réchauffement modifie les régimes climatiques et augmente la"
+      + "fréquence/intensité de nombreux extrêmes."
+  },
+
+  {
+    "id": "3.2.8",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quels phénomènes peuvent survenir au-delà de certains seuils de"
+      + "réchauffement ?",
+    "choices": [
+      {
+        "text": "Réorganisation abrupte du système climatique.",
+        "correct": true
+      },
+      {
+        "text": "Stabilisation rapide du climat.",
+        "correct": false
+      },
+      {
+        "text": "Désintégration de la calotte glaciaire du Groenland.",
+        "correct": true
+      },
+      {
+        "text": "Adaptation de la biodiversité.",
+        "correct": false
+      }
+    ],
+    "answer": "Réorganisation abrupte et désintégration de la calotte du Groenland.",
+    "justification": "Les points de bascule correspondent à des seuils pouvant"
+      + "entraîner des changements abrupts et irréversibles. 6 "
+      + "Durabilité EPFL"
+  },
+
+  {
+    "id": "3.2.9",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quelles affirmations sont vraies concernant les émissions de CO2 et"
+      + "le réchauffement ?",
+    "choices": [
+      {
+        "text": "Les émissions de CO2 n’affectent pas le niveau des mers.",
+        "correct": false
+      },
+      {
+        "text": "Les émissions annuelles actuelles sont de 40 Gt de CO2.",
+        "correct": true
+      },
+      {
+        "text": "1000 Gt de CO2 augmentent la température de 0,45 ◦C.",
+        "correct": true
+      },
+      {
+        "text": "Le CO2 fait fondre la banquise au Groenland.",
+        "correct": false
+      }
+    ],
+    "answer": "Les émissions annuelles actuelles sont d’environ 40 GtCO2 et 1000 Gt de CO2 augmentent la température de 0,45 ◦C environ.",
+    "justification": "Les émissions cumulées de CO2 déterminent le réchauffement ;"
+  },
+
+  {
+    "id": "3.3.1",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quels réservoirs échangent actuellement du carbone avec l’atmosphère"
+      + "?",
+    "choices": [
+      {
+        "text": "Rivières et lacs uniquement.",
+        "correct": false
+      },
+      {
+        "text": "Réservoirs fossiles comme le charbon.",
+        "correct": false
+      },
+      {
+        "text": "Océans avec carbone organique.",
+        "correct": true
+      },
+      {
+        "text": "Biosphère terrestre et sols gelés.",
+        "correct": true
+      }
+    ],
+    "answer": "Océans, biosphère terrestre et sols gelés.",
+    "justification": "Les échanges actuels concernent surtout biosphère, océans et"
+      + "sols ; les réservoirs fossiles deviennent flux vers"
+      + "l’atmosphère lorsqu’ils sont extraits et brûlés."
+  },
+
+  {
+    "id": "3.3.2",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quelles sont les principales sources d’émissions de CO2 dues aux"
+      + "activités humaines ?",
+    "choices": [
+      {
+        "text": "Respiration des humains.",
+        "correct": false
+      },
+      {
+        "text": "Combustion d’énergies fossiles.",
+        "correct": true
+      },
+      {
+        "text": "Émissions volcaniques.",
+        "correct": false
+      },
+      {
+        "text": "Modification de l’usage des sols.",
+        "correct": true
+      }
+    ],
+    "answer": "Combustion d’énergies fossiles et modification de l’usage des sols.",
+    "justification": "Les émissions anthropiques de CO2 proviennent surtout des"
+      + "énergies fossiles, puis de la déforestation et des changements"
+      + "d’usage des sols."
+  },
+
+  {
+    "id": "3.3.3",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quelles activités humaines contribuent aux émissions de méthane ?",
+    "choices": [
+      {
+        "text": "Vergers et potagers.",
+        "correct": false
+      },
+      {
+        "text": "Élevage de ruminants.",
+        "correct": true
+      },
+      {
+        "text": "Exploitation du gaz naturel.",
+        "correct": true
+      },
+      {
+        "text": "Culture du riz.",
+        "correct": true
+      }
+    ],
+    "answer": "Ruminants, gaz naturel et riziculture.",
+    "justification": "Le CH4 est émis par les milieux anaérobies, l’élevage, la"
+      + "riziculture, les fuites de gaz naturel et les déchets. 7 "
+      + "Durabilité EPFL"
+  },
+
+  {
+    "id": "3.3.4",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quels processus naturels modulent le CO2 dans l’atmosphère ?",
+    "choices": [
+      {
+        "text": "Évolution de l’albédo terrestre.",
+        "correct": false
+      },
+      {
+        "text": "Photosynthèse.",
+        "correct": true
+      },
+      {
+        "text": "Évaporation de l’eau.",
+        "correct": false
+      },
+      {
+        "text": "Respiration.",
+        "correct": true
+      }
+    ],
+    "answer": "Photosynthèse et respiration.",
+    "justification": "La photosynthèse retire du CO2 de l’atmosphère ; la respiration"
+      + "en émet."
+  },
+
+  {
+    "id": "3.4.1",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quels sont les effets possibles d’un climat plus chaud sur le cycle"
+      + "du carbone ?",
+    "choices": [
+      {
+        "text": "Décomposition d’hydrate de gaz dans les sédiments marins.",
+        "correct": true
+      },
+      {
+        "text": "Mobilisation du carbone des sols gelés.",
+        "correct": true
+      },
+      {
+        "text": "Relargage de CO2 par les océans.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation de la capacité des océans à absorber le CO2.",
+        "correct": false
+      }
+    ],
+    "answer": "Hydrates de gaz, sols gelés et relargage océanique.",
+    "justification": "Le réchauffement peut transformer certains puits naturels en"
+      + "sources de carbone."
+  },
+
+  {
+    "id": "3.4.2",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Quelles sont les conséquences possibles du réchauffement climatique"
+      + "sur l’environne- ment ?",
+    "choices": [
+      {
+        "text": "Augmentation des événements météorologiques extrêmes.",
+        "correct": true
+      },
+      {
+        "text": "Stabilisation des niveaux de la mer.",
+        "correct": false
+      },
+      {
+        "text": "Diminution de la biodiversité.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation de la fonte des glaces.",
+        "correct": true
+      }
+    ],
+    "answer": "Événements extrêmes, biodiversité en baisse et fonte des glaces.",
+    "justification": "Le réchauffement augmente les extrêmes, accélère la fonte de la"
+      + "cryosphère et fragilise les écosystèmes. 2.2 Suite du QCM"
+  },
+
+  {
+    "id": "3.5.1",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Est-il important de prendre en compte les aérosols atmosphériques"
+      + "d’origine anthro- pique dans l’évolution climatique future ?",
+    "choices": [
+      {
+        "text": "Non, car les aérosols jouent un rôle négligeable dans le bilan"
+          + "radiatif terrestre.",
+        "correct": false
+      },
+      {
+        "text": "Non, car les aérosols d’origine naturelle sont bien plus"
+          + "importants.",
+        "correct": false
+      },
+      {
+        "text": "Oui, car ils présentent un effet refroidissant estimé important.",
+        "correct": true
+      },
+      {
+        "text": "Oui, car ils accroissent l’effet de serre dû au gaz carbonique.",
+        "correct": false
+      }
+    ],
+    "answer": "Oui, car ils ont un effet refroidissant important.",
+    "justification": "Les aérosols (notamment sulfates) réfléchissent le rayonnement"
+      + "solaire et com- pensent partiellement le réchauffement. 8 "
+      + "Durabilité EPFL"
+  },
+
+  {
+    "id": "3.5.2",
+    "week": "Semaine 3 – Impact des humains sur la planète",
+    "question": "Parmi les affirmations ci-dessous, laquelle est incorrecte ?",
+    "choices": [
+      {
+        "text": "Les feux de biomasse accroissent la quantité de méthane dans"
+          + "l’atmosphère.",
+        "correct": true
+      },
+      {
+        "text": "Des points de bascule climatique sont déjà probables avec un"
+          + "réchauffement inférieur à +2 ◦C.",
+        "correct": true
+      },
+      {
+        "text": "L’accroissement de la température moyenne globale est à peu près"
+          + "linéairement relié aux émissions cumulées de CO2.",
+        "correct": true
+      },
+      {
+        "text": "Les procédés industriels de captage du CO2 atmosphérique"
+          + "retirent actuellement un millième des émissions d’origine"
+          + "anthropique.",
+        "correct": false
+      }
+    ],
+    "answer": "La dernière affirmation est incorrecte.",
+    "justification": "Le captage industriel actuel du CO2 reste extrêmement faible"
+      + "(bien inférieur à 0,1% des émissions), donc cette affirmation"
+      + "surestime largement son importance. 9  Durabilité EPFL"
+  },
+
+
+
+  {
+    "id": "4.1.1",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Parmi les neuf limites planétaires, celle qui montre le plus fort"
+      + "dépassement du seuil favorable est :",
+    "choices": [
+      {
+        "text": "La dégradation de la couche d’ozone.",
+        "correct": false
+      },
+      {
+        "text": "Le changement climatique.",
+        "correct": false
+      },
+      {
+        "text": "L’érosion de la biodiversité.",
+        "correct": true
+      },
+      {
+        "text": "Les nouvelles entités.",
+        "correct": false
+      }
+    ],
+    "answer": "L’érosion de la biodiversité.",
+    "justification": "La biodiversité est aujourd’hui la limite la plus fortement"
+      + "dépassée."
+  },
+
+  {
+    "id": "4.1.2",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quelles entités sont considérées comme nouvelles dans"
+      + "l’environnement selon les limites planétaires ?",
+    "choices": [
+      {
+        "text": "Aérosols.",
+        "correct": false
+      },
+      {
+        "text": "Métaux lourds.",
+        "correct": true
+      },
+      {
+        "text": "Microplastiques et polluants.",
+        "correct": true
+      },
+      {
+        "text": "Composés chimiques synthétiques.",
+        "correct": true
+      }
+    ],
+    "answer": "Métaux lourds, microplastiques et composés chimiques synthétiques.",
+    "justification": "Les nouvelles entités regroupent les substances introduites par"
+      + "l’activité humaine."
+  },
+
+  {
+    "id": "4.1.3",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Combien de limites planétaires sont actuellement dépassées ?",
+    "choices": [
+      {
+        "text": "4",
+        "correct": false
+      },
+      {
+        "text": "5",
+        "correct": false
+      },
+      {
+        "text": "6",
+        "correct": false
+      },
+      {
+        "text": "7",
+        "correct": true
+      },
+      {
+        "text": "8",
+        "correct": false
+      }
+    ],
+    "answer": "7",
+    "justification": "Selon le support du cours, 7 des 9 limites planétaires sont"
+      + "actuellement dépassées."
+  },
+
+  {
+    "id": "4.1.4",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Coche les limites planétaires actuellement dépassées.",
+    "choices": [
+      {
+        "text": "Changement climatique",
+        "correct": true
+      },
+      {
+        "text": "Nouvelles entités / pollution chimique",
+        "correct": true
+      },
+      {
+        "text": "Dégradation de la couche d’ozone stratosphérique",
+        "correct": false
+      },
+      {
+        "text": "Concentration des aérosols atmosphériques",
+        "correct": false
+      },
+      {
+        "text": "Acidification des océans",
+        "correct": true
+      },
+      {
+        "text": "Perturbations des cycles de l’azote et du phosphore",
+        "correct": true
+      },
+      {
+        "text": "Utilisation de l’eau douce",
+        "correct": true
+      },
+      {
+        "text": "Changement d’occupation des sols",
+        "correct": true
+      },
+      {
+        "text": "Érosion de la biodiversité",
+        "correct": true
+      }
+    ],
+    "answer": "Changement climatique, nouvelles entités / pollution chimique,"
+      + " acidification des océans, perturbations des cycles de l’azote"
+      + " et du phosphore, utilisation de l’eau douce, changement"
+      + " d’occupation des sols, érosion de la biodiversité.",
+    "justification": "yolo la zouz"
+  },
+
+  {
+    "id": "4.2.1",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quels éléments font partie de la biosphère ?",
+    "choices": [
+      {
+        "text": "Stratosphère et hydrosphère.",
+        "correct": false
+      },
+      {
+        "text": "Lithosphère et hydrosphère.",
+        "correct": true
+      },
+      {
+        "text": "Troposphère et mésosphère.",
+        "correct": false
+      },
+      {
+        "text": "Atmosphère et lithosphère.",
+        "correct": true
+      }
+    ],
+    "answer": "Lithosphère, hydrosphère et atmosphère.",
+    "justification": "La biosphère inclut tous les milieux où la vie est présente."
+  },
+
+  {
+    "id": "4.2.2",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quelles affirmations sont correctes concernant l’évolution de la"
+      + "biodiversité ?",
+    "choices": [
+      {
+        "text": "Elle est plus faible aujourd’hui qu’à d’autres périodes"
+          + "géologiques.",
+        "correct": false
+      },
+      {
+        "text": "Elle a augmenté après l’extinction des dinosaures.",
+        "correct": true
+      },
+      {
+        "text": "Elle est influencée par la sélection naturelle.",
+        "correct": true
+      },
+      {
+        "text": "Elle est restée stable au cours des périodes géologiques.",
+        "correct": false
+      }
+    ],
+    "answer": "Augmentation après extinction et influence de la sélection naturelle.",
+    "justification": "La biodiversité évolue avec les extinctions et les mécanismes"
+      + "évolutifs. 10  Durabilité EPFL"
+  },
+
+  {
+    "id": "4.2.3",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quels effets peut avoir l’augmentation de la biodiversité ?",
+    "choices": [
+      {
+        "text": "Diminution de la régulation climatique.",
+        "correct": false
+      },
+      {
+        "text": "Augmentation de la compétition entre les espèces.",
+        "correct": false
+      },
+      {
+        "text": "Réduction des espèces invasives.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation de la productivité.",
+        "correct": true
+      }
+    ],
+    "answer": "Réduction des invasives et augmentation de la productivité.",
+    "justification": "Une biodiversité élevée améliore le fonctionnement des"
+      + "écosystèmes."
+  },
+
+  {
+    "id": "4.3.1",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quels sont les indicateurs utilisés pour définir les limites"
+      + "planétaires du changement climatique ?",
+    "choices": [
+      {
+        "text": "Quantité d’azote et apport de phosphore.",
+        "correct": false
+      },
+      {
+        "text": "Concentration en CO2 et forçage radiatif.",
+        "correct": true
+      },
+      {
+        "text": "Concentration en aragonite et profondeur optique d’aérosols.",
+        "correct": false
+      },
+      {
+        "text": "Surface forestière et biodiversité fonctionnelle.",
+        "correct": false
+      }
+    ],
+    "answer": "CO2 et forçage radiatif.",
+    "justification": "Ils mesurent respectivement la concentration et le déséquilibre"
+      + "énergétique."
+  },
+
+  {
+    "id": "4.3.2",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quels éléments perturbent les cycles de l’azote et du phosphore ?",
+    "choices": [
+      {
+        "text": "Absorption de CO2 et composés soufrés.",
+        "correct": false
+      },
+      {
+        "text": "Agriculture et usage d’engrais.",
+        "correct": true
+      },
+      {
+        "text": "Déforestation et conversion des terres.",
+        "correct": false
+      },
+      {
+        "text": "Événements extrêmes et feux de forêt.",
+        "correct": false
+      }
+    ],
+    "answer": "Agriculture et engrais.",
+    "justification": "Les apports agricoles augmentent fortement les flux d’azote et"
+      + "de phosphore."
+  },
+
+  {
+    "id": "4.3.3",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quelles affirmations sont vraies concernant la diversité génétique ?",
+    "choices": [
+      {
+        "text": "Elle est importante pour la survie à long terme.",
+        "correct": true
+      },
+      {
+        "text": "Elle permet l’évolution des espèces.",
+        "correct": true
+      },
+      {
+        "text": "Elle est stable et ne change pas.",
+        "correct": false
+      },
+      {
+        "text": "Elle est identique pour toutes les espèces.",
+        "correct": false
+      }
+    ],
+    "answer": "Survie et évolution.",
+    "justification": "La diversité génétique est essentielle à l’adaptation."
+  },
+
+  {
+    "id": "4.3.4",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Où trouve-t-on généralement une forte biodiversité ?",
+    "choices": [
+      {
+        "text": "Dans les déserts.",
+        "correct": false
+      },
+      {
+        "text": "Autour de l’Équateur.",
+        "correct": true
+      },
+      {
+        "text": "Dans les forêts tropicales.",
+        "correct": true
+      },
+      {
+        "text": "Aux pôles.",
+        "correct": false
+      }
+    ],
+    "answer": "Équateur et forêts tropicales.",
+    "justification": "Les conditions y sont favorables à la diversité. 11  Durabilité"
+      + "EPFL"
+  },
+
+  {
+    "id": "4.3.5",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Lorsque des espèces utilisent des ressources différentes, on observe"
+      + "principalement :",
+    "choices": [
+      {
+        "text": "...de complémentarité.",
+        "correct": true
+      },
+      {
+        "text": "...de dispersion.",
+        "correct": false
+      },
+      {
+        "text": "...de facilitation.",
+        "correct": false
+      },
+      {
+        "text": "...de compétition.",
+        "correct": false
+      }
+    ],
+    "answer": "Complémentarité.",
+    "justification": "Les niches différentes réduisent la compétition."
+  },
+
+  {
+    "id": "4.4.1",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quelles périodes ont été marquées par des extinctions de masse"
+      + "significatives ?",
+    "choices": [
+      {
+        "text": "Pléistocène.",
+        "correct": true
+      },
+      {
+        "text": "Fin du Permien.",
+        "correct": true
+      },
+      {
+        "text": "Début du Jurassique.",
+        "correct": false
+      },
+      {
+        "text": "Fin du Crétacé.",
+        "correct": true
+      }
+    ],
+    "answer": "Pléistocène, Permien et Crétacé.",
+    "justification": "Ces périodes ont connu des extinctions majeures."
+  },
+
+  {
+    "id": "4.5.1",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quels facteurs contribuent à la perte actuelle de biodiversité ?",
+    "choices": [
+      {
+        "text": "Pollution par les plastiques.",
+        "correct": true
+      },
+      {
+        "text": "Surexploitation des ressources.",
+        "correct": true
+      },
+      {
+        "text": "Introduction d’espèces exotiques.",
+        "correct": true
+      },
+      {
+        "text": "Plus de compétition entre les espèces.",
+        "correct": false
+      }
+    ],
+    "answer": "Pollution, surexploitation et espèces exotiques.",
+    "justification": "Ce sont les principaux moteurs actuels."
+  },
+
+  {
+    "id": "4.5.2",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quels impacts le changement climatique a-t-il sur les espèces ?",
+    "choices": [
+      {
+        "text": "Risque d’extinction accru.",
+        "correct": true
+      },
+      {
+        "text": "Déplacement des niches écologiques.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation de la surface des habitats.",
+        "correct": false
+      },
+      {
+        "text": "Adaptation facile des espèces sessiles.",
+        "correct": false
+      }
+    ],
+    "answer": "Extinction et déplacement.",
+    "justification": "Le climat modifie les conditions de vie des espèces."
+  },
+
+  {
+    "id": "4.5.3",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quelles stratégies sont utilisées pour conserver la biodiversité ?",
+    "choices": [
+      {
+        "text": "Aide à la migration des espèces.",
+        "correct": true
+      },
+      {
+        "text": "Création de zones protégées.",
+        "correct": true
+      },
+      {
+        "text": "Création d’écoquartiers.",
+        "correct": false
+      },
+      {
+        "text": "Restauration des écosystèmes.",
+        "correct": true
+      }
+    ],
+    "answer": "Migration, protection et restauration.",
+    "justification": "Ce sont les principales stratégies de conservation. 12 "
+      + "Durabilité EPFL"
+  },
+
+  {
+    "id": "4.5.4",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Quelles mesures peuvent être prises pour protéger la biodiversité ?",
+    "choices": [
+      {
+        "text": "Créer des milieux artificiels.",
+        "correct": false
+      },
+      {
+        "text": "Limiter la hausse des températures.",
+        "correct": true
+      },
+      {
+        "text": "Augmenter les prédateurs des espèces invasives.",
+        "correct": false
+      },
+      {
+        "text": "Développer des technologies de conservation.",
+        "correct": true
+      }
+    ],
+    "answer": "Température et technologies.",
+    "justification": "La réduction du réchauffement est essentielle."
+  },
+
+  {
+    "id": "4.5.5",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "En quoi consiste l’indicateur de la perte de biodiversité ?",
+    "choices": [
+      {
+        "text": "Taux d’extinction et indice d’intégrité de la biodiversité.",
+        "correct": true
+      },
+      {
+        "text": "Nombre d’espèces présentes.",
+        "correct": false
+      },
+      {
+        "text": "Nombre de groupes fonctionnels.",
+        "correct": false
+      },
+      {
+        "text": "Qualité des écosystèmes.",
+        "correct": false
+      }
+    ],
+    "answer": "Taux d’extinction et BII.",
+    "justification": "C’est l’indicateur officiel des limites planétaires."
+  },
+
+  {
+    "id": "4.5.6",
+    "week": "Semaine 4 – Limites planétaires et biodiversité",
+    "question": "Pour qu’une espèce survive à un changement climatique :",
+    "choices": [
+      {
+        "text": "...de dispersion.",
+        "correct": false
+      },
+      {
+        "text": "...d’adaptation.",
+        "correct": true
+      },
+      {
+        "text": "...de migration.",
+        "correct": false
+      },
+      {
+        "text": "...de tolérance.",
+        "correct": false
+      }
+    ],
+    "answer": "Adaptation.",
+    "justification": "L’adaptation est clé face au changement climatique. 13 "
+      + "Durabilité EPFL"
+  },
+
+
+
+  {
+    "id": "5.1.1",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels sont les principaux réservoirs d’eau douce sur Terre ?",
+    "choices": [
+      {
+        "text": "Lacs et rivières.",
+        "correct": true
+      },
+      {
+        "text": "Eaux souterraines.",
+        "correct": true
+      },
+      {
+        "text": "Glaciers et neige.",
+        "correct": true
+      },
+      {
+        "text": "Océans.",
+        "correct": false
+      }
+    ],
+    "answer": "Lacs et rivières, eaux souterraines, glaciers et neige.",
+    "justification": "Les océans contiennent surtout de l’eau salée."
+  },
+
+  {
+    "id": "5.1.2",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels éléments forment un écosystème avec l’eau ?",
+    "choices": [
+      {
+        "text": "Stratosphère.",
+        "correct": false
+      },
+      {
+        "text": "Lithosphère.",
+        "correct": true
+      },
+      {
+        "text": "Atmosphère.",
+        "correct": true
+      },
+      {
+        "text": "Biosphère.",
+        "correct": true
+      }
+    ],
+    "answer": "Lithosphère, atmosphère et biosphère.",
+    "justification": "Les écosystèmes avec l’eau impliquent les sphères où l’eau"
+      + "interagit avec le vivant et les milieux physiques."
+  },
+
+  {
+    "id": "5.1.3",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Parmi les ressources suivantes, lesquelles sont considérées comme"
+      + "renouvelables ?",
+    "choices": [
+      {
+        "text": "Énergie solaire.",
+        "correct": true
+      },
+      {
+        "text": "Eau.",
+        "correct": true
+      },
+      {
+        "text": "Charbon.",
+        "correct": false
+      },
+      {
+        "text": "Pétrole.",
+        "correct": false
+      }
+    ],
+    "answer": "Énergie solaire et eau.",
+    "justification": "Elles se régénèrent naturellement à l’échelle humaine,"
+      + "contrairement au charbon et au pétrole."
+  },
+
+  {
+    "id": "5.1.4",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels facteurs influencent la durée de renouvellement de l’eau dans"
+      + "l’atmosphère ?",
+    "choices": [
+      {
+        "text": "Évaporation.",
+        "correct": true
+      },
+      {
+        "text": "Température.",
+        "correct": true
+      },
+      {
+        "text": "Pollution.",
+        "correct": false
+      },
+      {
+        "text": "Précipitations.",
+        "correct": true
+      }
+    ],
+    "answer": "Évaporation, température et précipitations.",
+    "justification": "Le renouvellement atmosphérique dépend des flux d’entrée et de"
+      + "sortie d’eau. 14  Durabilité EPFL"
+  },
+
+  {
+    "id": "5.1.5",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quelles utilisations de l’eau sont considérées comme consommatrices"
+      + "?",
+    "choices": [
+      {
+        "text": "Irrigation.",
+        "correct": true
+      },
+      {
+        "text": "Navigation.",
+        "correct": false
+      },
+      {
+        "text": "Usage domestique.",
+        "correct": true
+      },
+      {
+        "text": "Production d’énergie hydroélectrique.",
+        "correct": false
+      }
+    ],
+    "answer": "Irrigation et usage domestique.",
+    "justification": "Un usage consommateur affecte la quantité ou la qualité de"
+      + "l’eau disponible."
+  },
+
+  {
+    "id": "5.2.1",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels processus de transport sont impliqués dans le cycle"
+      + "hydrologique ?",
+    "choices": [
+      {
+        "text": "Photosynthèse.",
+        "correct": false
+      },
+      {
+        "text": "Convection.",
+        "correct": true
+      },
+      {
+        "text": "Advection.",
+        "correct": true
+      },
+      {
+        "text": "Diffusion.",
+        "correct": true
+      }
+    ],
+    "answer": "Convection, advection et diffusion.",
+    "justification": "Ce sont les principaux processus de transport de l’eau dans le"
+      + "cycle hydrologique."
+  },
+
+  {
+    "id": "5.2.2",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Pourquoi l’eau douce est-elle cruciale pour la vie sur Terre ?",
+    "choices": [
+      {
+        "text": "Elle est renouvelable.",
+        "correct": true
+      },
+      {
+        "text": "Elle soutient les processus géomorphologiques.",
+        "correct": true
+      },
+      {
+        "text": "Elle est abondante et facilement accessible.",
+        "correct": false
+      },
+      {
+        "text": "Elle est essentielle pour la photosynthèse.",
+        "correct": true
+      }
+    ],
+    "answer": "Renouvelable, géomorphologie et photosynthèse.",
+    "justification": "L’eau douce est essentielle aux processus terrestres et"
+      + "biologiques, mais elle n’est pas facilement accessible."
+  },
+
+  {
+    "id": "5.2.3",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quelles sont les caractéristiques de la distribution de l’eau sur"
+      + "Terre ?",
+    "choices": [
+      {
+        "text": "L’eau est principalement dans l’atmosphère.",
+        "correct": false
+      },
+      {
+        "text": "L’eau salée est plus abondante que l’eau douce.",
+        "correct": true
+      },
+      {
+        "text": "L’eau douce est principalement sous forme de glace.",
+        "correct": true
+      },
+      {
+        "text": "L’eau douce est facilement accessible.",
+        "correct": false
+      }
+    ],
+    "answer": "Eau salée majoritaire et eau douce surtout sous forme de glace.",
+    "justification": "La majorité de l’eau terrestre est salée ; la majorité de l’eau"
+      + "douce est stockée dans les glaces."
+  },
+
+  {
+    "id": "5.2.4",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quelles sont les principales utilisations de l’eau douce dans le"
+      + "monde ?",
+    "choices": [
+      {
+        "text": "Agriculture.",
+        "correct": true
+      },
+      {
+        "text": "Usage domestique.",
+        "correct": true
+      },
+      {
+        "text": "Transport.",
+        "correct": false
+      },
+      {
+        "text": "Industrie.",
+        "correct": true
+      }
+    ],
+    "answer": "Agriculture, usage domestique et industrie.",
+    "justification": "L’agriculture est le premier poste d’utilisation de l’eau"
+      + "douce. 15  Durabilité EPFL"
+  },
+
+  {
+    "id": "5.2.5",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels secteurs consomment le plus d’eau dans les pays à revenu"
+      + "élevé, en comparaison avec les pays à revenu plus faible ?",
+    "choices": [
+      {
+        "text": "Agriculture.",
+        "correct": false
+      },
+      {
+        "text": "Transport.",
+        "correct": false
+      },
+      {
+        "text": "Usage domestique.",
+        "correct": true
+      },
+      {
+        "text": "Industrie.",
+        "correct": true
+      }
+    ],
+    "answer": "Usage domestique et industrie.",
+    "justification": "Les pays à revenu élevé utilisent proportionnellement plus"
+      + "d’eau pour l’industrie et les usages domestiques."
+  },
+
+  {
+    "id": "5.3.1",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels types d’eau sont associés à l’irrigation pour l’agriculture et"
+      + "à la pollution industrielle ?",
+    "choices": [
+      {
+        "text": "Eau bleue et eau verte.",
+        "correct": false
+      },
+      {
+        "text": "Eau bleue et eau grise.",
+        "correct": true
+      },
+      {
+        "text": "Eau verte et eau grise.",
+        "correct": false
+      },
+      {
+        "text": "Eau bleue, eau verte et eau grise.",
+        "correct": false
+      }
+    ],
+    "answer": "Eau bleue et eau grise.",
+    "justification": "L’eau bleue est utilisée pour l’irrigation ; l’eau grise est"
+      + "liée à la pollution."
+  },
+
+  {
+    "id": "5.3.2",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels concepts sont liés à l’eau virtuelle dans le commerce"
+      + "international ?",
+    "choices": [
+      {
+        "text": "Transfert de biens et dépendances internationales.",
+        "correct": true
+      },
+      {
+        "text": "Consommation directe et production locale.",
+        "correct": false
+      },
+      {
+        "text": "Importation et exportation de produits.",
+        "correct": true
+      },
+      {
+        "text": "Efficacité de l’irrigation et pollution.",
+        "correct": false
+      }
+    ],
+    "answer": "Transfert de biens, dépendances internationales, importations et"
+      + "exporta- tions.",
+    "justification": "Le commerce déplace indirectement l’eau utilisée pour produire"
+      + "les biens."
+  },
+
+  {
+    "id": "5.3.3",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quelles couleurs d’eau sont associées à l’eau de pluie et à l’eau de"
+      + "surface respective- ment ?",
+    "choices": [
+      {
+        "text": "Eau bleue et eau grise.",
+        "correct": false
+      },
+      {
+        "text": "Eau verte et eau bleue.",
+        "correct": true
+      },
+      {
+        "text": "Eau bleue pour les deux.",
+        "correct": false
+      },
+      {
+        "text": "Eau verte pour les deux.",
+        "correct": false
+      }
+    ],
+    "answer": "Eau verte et eau bleue.",
+    "justification": "L’eau verte correspond à l’eau de pluie stockée dans les sols ;"
+      + "l’eau bleue correspond aux eaux de surface ou souterraines. 16 "
+      + "Durabilité EPFL"
+  },
+
+  {
+    "id": "5.3.4",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels éléments sont nécessaires pour calculer l’empreinte hydrique"
+      + "d’une production agricole ?",
+    "choices": [
+      {
+        "text": "Surface totale et précipitations annuelles.",
+        "correct": true
+      },
+      {
+        "text": "Demande d’évaporation et concentration résiduelle.",
+        "correct": true
+      },
+      {
+        "text": "Efficacité de l’irrigation et besoin d’engrais.",
+        "correct": true
+      },
+      {
+        "text": "Production totale et coefficient de perte de pluies.",
+        "correct": true
+      }
+    ],
+    "answer": "Toutes les propositions.",
+    "justification": "Le calcul combine production, eau verte, eau bleue, irrigation"
+      + "et pollution."
+  },
+
+  {
+    "id": "5.3.5",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quelles stratégies peuvent être mises en œuvre pour une gestion"
+      + "durable de l’eau ?",
+    "choices": [
+      {
+        "text": "Collecte d’eau de pluie.",
+        "correct": true
+      },
+      {
+        "text": "Restauration des zones riveraines.",
+        "correct": true
+      },
+      {
+        "text": "Programmes d’éducation à la conservation.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation de la production industrielle.",
+        "correct": false
+      }
+    ],
+    "answer": "Collecte d’eau de pluie, restauration et éducation.",
+    "justification": "Ces stratégies réduisent la pression sur les ressources et"
+      + "améliorent la gestion locale."
+  },
+
+  {
+    "id": "5.3.6",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quelles solutions peuvent être mises en place pour réduire la"
+      + "pollution de l’eau ?",
+    "choices": [
+      {
+        "text": "Réglementations strictes.",
+        "correct": true
+      },
+      {
+        "text": "Reforestation.",
+        "correct": false
+      },
+      {
+        "text": "Amélioration des technologies de traitement.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation de l’irrigation.",
+        "correct": false
+      }
+    ],
+    "answer": "Réglementations strictes et technologies de traitement.",
+    "justification": "Elles permettent de limiter les rejets et d’améliorer la"
+      + "qualité de l’eau."
+  },
+
+  {
+    "id": "5.4.1",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quelles composantes sont incluses dans le calcul de l’empreinte"
+      + "hydrique totale ?",
+    "choices": [
+      {
+        "text": "Empreinte bleue et verte.",
+        "correct": false
+      },
+      {
+        "text": "Empreinte verte et grise.",
+        "correct": false
+      },
+      {
+        "text": "Empreinte bleue, verte et grise.",
+        "correct": true
+      },
+      {
+        "text": "Empreinte bleue et grise.",
+        "correct": false
+      }
+    ],
+    "answer": "Empreintes bleue, verte et grise.",
+    "justification": "L’empreinte hydrique totale est la somme des trois composantes."
+  },
+
+  {
+    "id": "5.4.2",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels facteurs influencent l’empreinte hydrique d’un pays ?",
+    "choices": [
+      {
+        "text": "Consommation interne des ménages.",
+        "correct": true
+      },
+      {
+        "text": "Agriculture locale.",
+        "correct": true
+      },
+      {
+        "text": "Industrie locale.",
+        "correct": true
+      },
+      {
+        "text": "Importation de biens.",
+        "correct": true
+      }
+    ],
+    "answer": "Toutes les propositions.",
+    "justification": "L’empreinte hydrique comprend les usages directs, indirects et"
+      + "importés. 17  Durabilité EPFL"
+  },
+
+  {
+    "id": "5.4.3",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels types d’eau sont clairement affectés par l’efficacité de"
+      + "l’irrigation ?",
+    "choices": [
+      {
+        "text": "Eau bleue.",
+        "correct": true
+      },
+      {
+        "text": "Eau verte.",
+        "correct": false
+      },
+      {
+        "text": "Eau grise.",
+        "correct": false
+      },
+      {
+        "text": "Aucun des types d’eau.",
+        "correct": false
+      }
+    ],
+    "answer": "Eau bleue.",
+    "justification": "L’efficacité de l’irrigation modifie directement le volume"
+      + "d’eau bleue nécessaire."
+  },
+
+  {
+    "id": "5.4.4",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels sont les défis principaux actuels de la gestion des ressources"
+      + "en eau ?",
+    "choices": [
+      {
+        "text": "Pollution de l’eau.",
+        "correct": true
+      },
+      {
+        "text": "Déforestation.",
+        "correct": true
+      },
+      {
+        "text": "Changement climatique.",
+        "correct": true
+      },
+      {
+        "text": "Surpêche.",
+        "correct": false
+      }
+    ],
+    "answer": "Pollution, déforestation et changement climatique.",
+    "justification": "Ces facteurs affectent directement ou indirectement la"
+      + "disponibilité et la qualité de l’eau."
+  },
+
+  {
+    "id": "5.4.5",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels impacts le changement climatique a-t-il sur les ressources en"
+      + "eau au niveau global ?",
+    "choices": [
+      {
+        "text": "Augmentation des précipitations.",
+        "correct": false
+      },
+      {
+        "text": "Augmentation de la pollution.",
+        "correct": false
+      },
+      {
+        "text": "Intensification des extrêmes.",
+        "correct": true
+      },
+      {
+        "text": "Réduction de la biodiversité.",
+        "correct": true
+      }
+    ],
+    "answer": "Intensification des extrêmes et réduction de la biodiversité.",
+    "justification": "Le changement climatique modifie les extrêmes hydrologiques et"
+      + "fragilise les écosystèmes."
+  },
+
+  {
+    "id": "5.5.1",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Quels sont les pourcentages exacts concernant le stock naturel d’eau"
+      + "douce ?",
+    "choices": [
+      {
+        "text": "L’eau douce représente 2,5% de l’eau totale ; les glaciers"
+          + "représentent 68,9% de l’eau totale.",
+        "correct": false
+      },
+      {
+        "text": "Les glaciers représentent 68,9% de l’eau douce ; les lacs et"
+          + "rivières représentent 0,3% de l’eau totale.",
+        "correct": false
+      },
+      {
+        "text": "L’eau douce directement accessible représente 0,0075% de l’eau"
+          + "totale ; les eaux souterraines représentent 30,8% de l’eau"
+          + "douce.",
+        "correct": true
+      },
+      {
+        "text": "L’eau douce représente 30,8% de l’eau totale ; les lacs et"
+          + "rivières représentent 0,3% de l’eau totale.",
+        "correct": false
+      }
+    ],
+    "answer": "Eau accessible = 0,0075% du total ; eaux souterraines = 30,8% de l’eau"
+      + "douce.",
+    "justification": "La fraction directement accessible est minuscule par rapport au"
+      + "stock total d’eau. 18  Durabilité EPFL"
+  },
+
+  {
+    "id": "5.5.2",
+    "week": "Semaine 5 – Hydrosphère et utilisation de l’eau douce",
+    "question": "Parmi les stratégies suivantes, lesquelles sont compatibles avec une"
+      + "approche durable de l’utilisation de l’eau douce ?",
+    "choices": [
+      {
+        "text": "Éducation, réservoirs d’eau de pluie puis rejet progressif dans"
+          + "les égouts.",
+        "correct": false
+      },
+      {
+        "text": "Éducation, amélioration de la législation, collecte de l’eau de"
+          + "pluie pour le jardinage et les besoins domestiques.",
+        "correct": true
+      },
+      {
+        "text": "Encourager l’utilisation des eaux souterraines et rejeter l’eau"
+          + "collectée dans les égouts.",
+        "correct": false
+      },
+      {
+        "text": "Exploiter les ressources non directement accessibles comme"
+          + "glaciers et eaux souterraines.",
+        "correct": false
+      }
+    ],
+    "answer": "Éducation, législation et utilisation locale de l’eau de pluie.",
+    "justification": "Une approche durable réduit les pressions, évite le gaspillage"
+      + "et améliore la gouvernance. 19  Durabilité EPFL"
+  },
+
+
+
+  {
+    "id": "6.1.1",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Quelles sont les préoccupations historiques liées aux mouvements"
+      + "environnementalistes ?",
+    "choices": [
+      {
+        "text": "Croissance économique.",
+        "correct": false
+      },
+      {
+        "text": "Épuisement des ressources.",
+        "correct": true
+      },
+      {
+        "text": "Lutte contre les pollutions.",
+        "correct": true
+      },
+      {
+        "text": "Protection des paysages.",
+        "correct": true
+      }
+    ],
+    "answer": "Ressources, pollution, paysages.",
+    "justification": "Ce sont les premières préoccupations environnementales."
+  },
+
+  {
+    "id": "6.1.2",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Quand a-t-on dépassé les pics du pétrole conventionnel ?",
+    "choices": [
+      {
+        "text": "Aucun pic dépassé.",
+        "correct": false
+      },
+      {
+        "text": "Pic US 2006.",
+        "correct": false
+      },
+      {
+        "text": "Pic US années 1950.",
+        "correct": false
+      },
+      {
+        "text": "Pic US années 1970 et mondial en 2006.",
+        "correct": true
+      },
+      {
+        "text": "Pic US années 1950 et mondial non atteint.",
+        "correct": false
+      }
+    ],
+    "answer": "US années 1970, monde 2006.",
+    "justification": "Correspond aux données historiques."
+  },
+
+  {
+    "id": "6.1.3",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Quelles approches caractérisent la science du système Terre ?",
+    "choices": [
+      {
+        "text": "Étudier les changements globaux.",
+        "correct": true
+      },
+      {
+        "text": "Étudier les impacts humains.",
+        "correct": true
+      },
+      {
+        "text": "Étudier toutes les sphères et interactions.",
+        "correct": true
+      },
+      {
+        "text": "Étudier séparément niveaux local/global.",
+        "correct": false
+      }
+    ],
+    "answer": "Global + interactions.",
+    "justification": "Vision systémique."
+  },
+
+  {
+    "id": "6.1.4",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Quelles sont les caractéristiques des changements globaux ?",
+    "choices": [
+      {
+        "text": "Problèmes techniques.",
+        "correct": false
+      },
+      {
+        "text": "Chaîne causale indirecte.",
+        "correct": true
+      },
+      {
+        "text": "Inaccessibilité au sens.",
+        "correct": true
+      },
+      {
+        "text": "Conséquences à long terme.",
+        "correct": true
+      },
+      {
+        "text": "Problèmes locaux.",
+        "correct": false
+      },
+      {
+        "text": "Causes multiples.",
+        "correct": true
+      }
+    ],
+    "answer": "Chaîne indirecte, complexité, long terme, causes multiples.",
+    "justification": "Problèmes complexes. 20  Durabilité EPFL"
+  },
+
+  {
+    "id": "6.2.1",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Raisons de protéger les paysages au 19e siècle ?",
+    "choices": [
+      {
+        "text": "Biodiversité.",
+        "correct": false
+      },
+      {
+        "text": "Relation humains-paysages.",
+        "correct": true
+      },
+      {
+        "text": "Exploitation forestière.",
+        "correct": false
+      },
+      {
+        "text": "Raisons esthétiques.",
+        "correct": true
+      }
+    ],
+    "answer": "Relation + esthétique.",
+    "justification": "Motivation initiale non écologique."
+  },
+
+  {
+    "id": "6.2.2",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Quels événements ont contribué à la prise de conscience"
+      + "environnementale ?",
+    "choices": [
+      {
+        "text": "Love Canal.",
+        "correct": true
+      },
+      {
+        "text": "Torrey Canyon.",
+        "correct": true
+      },
+      {
+        "text": "Révolution industrielle.",
+        "correct": false
+      },
+      {
+        "text": "Minamata.",
+        "correct": true
+      }
+    ],
+    "answer": "Love Canal, Torrey Canyon, Minamata.",
+    "justification": "Crises environnementales majeures."
+  },
+
+  {
+    "id": "6.2.3",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Quelles sont les limites planétaires centrales ?",
+    "choices": [
+      {
+        "text": "Biodiversité.",
+        "correct": true
+      },
+      {
+        "text": "Usage des sols.",
+        "correct": false
+      },
+      {
+        "text": "Changement climatique.",
+        "correct": true
+      },
+      {
+        "text": "Acidification des océans.",
+        "correct": false
+      }
+    ],
+    "answer": "Biodiversité + climat.",
+    "justification": "Limites dominantes."
+  },
+
+  {
+    "id": "6.2.4",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Quelles affirmations sur Holocène et Anthropocène ?",
+    "choices": [
+      {
+        "text": "Holocène = 12’000 ans.",
+        "correct": true
+      },
+      {
+        "text": "Holocène instable.",
+        "correct": false
+      },
+      {
+        "text": "Anthropocène = influence humaine.",
+        "correct": true
+      },
+      {
+        "text": "Holocène stable.",
+        "correct": true
+      },
+      {
+        "text": "Anthropocène = 12’000 ans.",
+        "correct": false
+      },
+      {
+        "text": "Anthropocène non officiel.",
+        "correct": true
+      }
+    ],
+    "answer": "Holocène stable + Anthropocène humain + non officiel.",
+    "justification": "Concepts clés."
+  },
+
+  {
+    "id": "6.3.1",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Définition simple de la durabilité ?",
+    "choices": [
+      {
+        "text": "ODD.",
+        "correct": false
+      },
+      {
+        "text": "Fin croissance infinie.",
+        "correct": false
+      },
+      {
+        "text": "Substitution piliers.",
+        "correct": false
+      },
+      {
+        "text": "Stabilité long terme.",
+        "correct": true
+      }
+    ],
+    "answer": "Stabilité long terme.",
+    "justification": "Définition fondamentale. 21  Durabilité EPFL"
+  },
+
+  {
+    "id": "6.3.2",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Durabilité forte : caractéristiques ?",
+    "choices": [
+      {
+        "text": "Préservation du capital naturel.",
+        "correct": true
+      },
+      {
+        "text": "Substituabilité totale.",
+        "correct": false
+      },
+      {
+        "text": "Croissance prioritaire.",
+        "correct": false
+      },
+      {
+        "text": "Limites à la substituabilité.",
+        "correct": true
+      }
+    ],
+    "answer": "Préservation + limites.",
+    "justification": "Non substituable."
+  },
+
+  {
+    "id": "6.3.3",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Approche durabilité forte (priorités) ?",
+    "choices": [
+      {
+        "text": "Consommation > biodiversité.",
+        "correct": false
+      },
+      {
+        "text": "Réduction inégalités > croissance.",
+        "correct": true
+      },
+      {
+        "text": "Croissance > eau.",
+        "correct": false
+      },
+      {
+        "text": "Biodiversité > urbanisation.",
+        "correct": true
+      }
+    ],
+    "answer": "Inégalités + biodiversité.",
+    "justification": "Priorité écologique/sociale."
+  },
+
+  {
+    "id": "6.3.4",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Éléments essentiels du Donut ?",
+    "choices": [
+      {
+        "text": "Technologie.",
+        "correct": false
+      },
+      {
+        "text": "Limites planétaires.",
+        "correct": true
+      },
+      {
+        "text": "Fondement social.",
+        "correct": true
+      },
+      {
+        "text": "Croissance économique.",
+        "correct": false
+      }
+    ],
+    "answer": "Limites + social.",
+    "justification": "Structure Donut."
+  },
+
+  {
+    "id": "6.3.5",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Fondement social : dimensions ?",
+    "choices": [
+      {
+        "text": "Croissance.",
+        "correct": false
+      },
+      {
+        "text": "Éducation.",
+        "correct": true
+      },
+      {
+        "text": "Technologie.",
+        "correct": false
+      },
+      {
+        "text": "Égalité de genre.",
+        "correct": true
+      }
+    ],
+    "answer": "Éducation + égalité.",
+    "justification": "Conditions de vie."
+  },
+
+  {
+    "id": "6.3.6",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Usage du Donut aujourd’hui ?",
+    "choices": [
+      {
+        "text": "Fixer objectifs transition.",
+        "correct": true
+      },
+      {
+        "text": "Remplacer ODD.",
+        "correct": false
+      },
+      {
+        "text": "Outil diagnostic.",
+        "correct": true
+      },
+      {
+        "text": "Guide opérationnel complet.",
+        "correct": false
+      }
+    ],
+    "answer": "Objectifs + diagnostic.",
+    "justification": "Outil stratégique. 22  Durabilité EPFL"
+  },
+
+  {
+    "id": "6.4.1",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Seuils des limites planétaires ?",
+    "choices": [
+      {
+        "text": "Max ressource.",
+        "correct": false
+      },
+      {
+        "text": "Niveau max perturbation.",
+        "correct": true
+      },
+      {
+        "text": "Point effondrement exact.",
+        "correct": false
+      },
+      {
+        "text": "Norme universelle.",
+        "correct": false
+      }
+    ],
+    "answer": "Niveau de perturbation.",
+    "justification": "Zone de sécurité."
+  },
+
+  {
+    "id": "6.4.2",
+    "week": "Semaine 6 – Histoire des idées & durabilité",
+    "question": "Différence durabilité faible vs forte ?",
+    "choices": [
+      {
+        "text": "Environnement vs économie inversé.",
+        "correct": false
+      },
+      {
+        "text": "Social vs environnement.",
+        "correct": false
+      },
+      {
+        "text": "Faible = substituable, forte = limites.",
+        "correct": true
+      },
+      {
+        "text": "ODD uniquement.",
+        "correct": false
+      }
+    ],
+    "answer": "Substituabilité vs limites.",
+    "justification": "Distinction clé. 23  Durabilité EPFL"
+  },
+
+
+
+  {
+    "id": "7.1.1",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Quels éléments sont essentiels pour définir un système ?",
+    "choices": [
+      {
+        "text": "Les éléments du système.",
+        "correct": true
+      },
+      {
+        "text": "Les interconnexions entre les parties.",
+        "correct": true
+      },
+      {
+        "text": "L’objectif du système.",
+        "correct": true
+      },
+      {
+        "text": "La taille des éléments.",
+        "correct": false
+      }
+    ],
+    "answer": "Éléments, interconnexions et objectif.",
+    "justification": "Un système est défini par ses composants, leurs interactions et"
+      + "son but."
+  },
+
+  {
+    "id": "7.1.2",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Quelles caractéristiques définissent les limites d’un système ?",
+    "choices": [
+      {
+        "text": "Elles définissent d’où les flux entrent et sortent.",
+        "correct": true
+      },
+      {
+        "text": "Elles sont fixes et immuables.",
+        "correct": false
+      },
+      {
+        "text": "Elles peuvent être ajustées selon le modèle.",
+        "correct": true
+      },
+      {
+        "text": "Elles n’ont pas d’impact sur le modèle.",
+        "correct": false
+      }
+    ],
+    "answer": "Entrées/sorties et ajustabilité.",
+    "justification": "Les limites dépendent du modèle choisi."
+  },
+
+  {
+    "id": "7.1.3",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Combien de boucles de rétroaction contient le système présenté ?",
+    "choices": [
+      {
+        "text": "Uniquement une boucle amplificatrice.",
+        "correct": true
+      },
+      {
+        "text": "Une boucle amplificatrice et une régulatrice.",
+        "correct": false
+      },
+      {
+        "text": "Uniquement une boucle régulatrice.",
+        "correct": false
+      },
+      {
+        "text": "Aucune boucle.",
+        "correct": false
+      }
+    ],
+    "answer": "Une boucle amplificatrice.",
+    "justification": "Le système renforce l’évolution dans un seul sens."
+  },
+
+  {
+    "id": "7.1.4",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Quels éléments sont importants pour modéliser des systèmes complexes"
+      + "?",
+    "choices": [
+      {
+        "text": "Flux directs vers les actions.",
+        "correct": false
+      },
+      {
+        "text": "Stocks multiples.",
+        "correct": true
+      },
+      {
+        "text": "Boucles de rétroaction.",
+        "correct": true
+      },
+      {
+        "text": "Variables et flèches d’influence.",
+        "correct": true
+      }
+    ],
+    "answer": "Stocks, boucles et variables.",
+    "justification": "Les systèmes complexes nécessitent une approche dynamique"
+      + "complète. 24  Durabilité EPFL"
+  },
+
+  {
+    "id": "7.2.1",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Lesquels sont des systèmes (et non des collections) ?",
+    "choices": [
+      {
+        "text": "Une armoire pleine de vêtements.",
+        "correct": false
+      },
+      {
+        "text": "Le corps humain.",
+        "correct": true
+      },
+      {
+        "text": "Une équipe de football.",
+        "correct": true
+      },
+      {
+        "text": "Un toaster.",
+        "correct": true
+      },
+      {
+        "text": "Une base de données clients.",
+        "correct": false
+      },
+      {
+        "text": "Des outils dans une boîte.",
+        "correct": false
+      }
+    ],
+    "answer": "Corps humain, équipe, toaster.",
+    "justification": "Un système implique interactions + objectif."
+  },
+
+  {
+    "id": "7.2.2",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Quels comportements observe-t-on en équilibre dynamique ?",
+    "choices": [
+      {
+        "text": "Flux entrants = flux sortants.",
+        "correct": true
+      },
+      {
+        "text": "Stock constant.",
+        "correct": true
+      },
+      {
+        "text": "Flux nuls.",
+        "correct": false
+      },
+      {
+        "text": "Arrêt du système.",
+        "correct": false
+      }
+    ],
+    "answer": "Flux équilibrés et stock constant.",
+    "justification": "Les flux existent mais se compensent."
+  },
+
+  {
+    "id": "7.2.3",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Quels types de boucles existent ?",
+    "choices": [
+      {
+        "text": "Conversion.",
+        "correct": false
+      },
+      {
+        "text": "Régulatrices.",
+        "correct": true
+      },
+      {
+        "text": "Amplificatrices.",
+        "correct": true
+      },
+      {
+        "text": "Transformatrices.",
+        "correct": false
+      }
+    ],
+    "answer": "Régulatrices et amplificatrices.",
+    "justification": "Deux types fondamentaux de feedback."
+  },
+
+  {
+    "id": "7.2.4",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Que représentent les flèches d’influence ?",
+    "choices": [
+      {
+        "text": "Relation entre variables.",
+        "correct": true
+      },
+      {
+        "text": "Influence sur les flux.",
+        "correct": true
+      },
+      {
+        "text": "Influence directe sur les stocks.",
+        "correct": false
+      },
+      {
+        "text": "Les variables elles-mêmes.",
+        "correct": false
+      }
+    ],
+    "answer": "Relations et influence sur flux.",
+    "justification": "Elles montrent les interactions."
+  },
+
+  {
+    "id": "7.2.5",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Quels stocks sont liés par une boucle amplificatrice climatique ?",
+    "choices": [
+      {
+        "text": "Énergie infrarouge.",
+        "correct": false
+      },
+      {
+        "text": "Température moyenne de la Terre.",
+        "correct": true
+      },
+      {
+        "text": "Quantité de glace aux pôles.",
+        "correct": true
+      },
+      {
+        "text": "Glace qui fond.",
+        "correct": false
+      }
+    ],
+    "answer": "Température et glace.",
+    "justification": "Boucle glace–albédo. 25  Durabilité EPFL"
+  },
+
+  {
+    "id": "7.3.1",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Quels types de points de levier existent ?",
+    "choices": [
+      {
+        "text": "Financiers.",
+        "correct": false
+      },
+      {
+        "text": "Rétroaction.",
+        "correct": true
+      },
+      {
+        "text": "Sociaux.",
+        "correct": true
+      },
+      {
+        "text": "Techniques.",
+        "correct": true
+      }
+    ],
+    "answer": "Rétroaction, sociaux, techniques.",
+    "justification": "Ce sont les leviers efficaces dans un système."
+  },
+
+  {
+    "id": "7.3.2",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Quel concept illustre la situation de la pêche ?",
+    "choices": [
+      {
+        "text": "Feedback loop.",
+        "correct": false
+      },
+      {
+        "text": "Delay.",
+        "correct": false
+      },
+      {
+        "text": "Rationalité limitée.",
+        "correct": true
+      },
+      {
+        "text": "Policy resistance.",
+        "correct": false
+      }
+    ],
+    "answer": "Rationalité limitée.",
+    "justification": "Manque d’information →décisions imparfaites."
+  },
+
+  {
+    "id": "7.3.3",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Quels facteurs causent les inondations à Nouakchott ?",
+    "choices": [
+      {
+        "text": "Urbanisation rapide.",
+        "correct": true
+      },
+      {
+        "text": "Absence de canaux.",
+        "correct": true
+      },
+      {
+        "text": "Effet entonnoir des montagnes.",
+        "correct": false
+      },
+      {
+        "text": "Égouts inefficaces.",
+        "correct": true
+      }
+    ],
+    "answer": "Urbanisation, canaux, égouts.",
+    "justification": "Accumulation d’eau mal gérée."
+  },
+
+  {
+    "id": "7.3.4",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Quels impacts de l’urbanisation rapide ?",
+    "choices": [
+      {
+        "text": "Nivellement des sols.",
+        "correct": true
+      },
+      {
+        "text": "Augmentation des inondations.",
+        "correct": true
+      },
+      {
+        "text": "Expansion des infrastructures.",
+        "correct": true
+      },
+      {
+        "text": "Diminution population.",
+        "correct": false
+      },
+      {
+        "text": "Amélioration qualité de vie.",
+        "correct": false
+      }
+    ],
+    "answer": "Sols, inondations, infrastructures.",
+    "justification": "Urbanisation non contrôlée."
+  },
+
+  {
+    "id": "7.4.1",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Quels pièges systémiques existent ?",
+    "choices": [
+      {
+        "text": "Effet papillon.",
+        "correct": false
+      },
+      {
+        "text": "Tragédie des biens communs.",
+        "correct": true
+      },
+      {
+        "text": "Dérive vers faible performance.",
+        "correct": true
+      },
+      {
+        "text": "Résistance aux politiques.",
+        "correct": true
+      }
+    ],
+    "answer": "Les trois derniers.",
+    "justification": "Pièges classiques des systèmes complexes. 26  Durabilité EPFL"
+  },
+
+  {
+    "id": "7.4.2",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Pourquoi les interventions échouent-elles ?",
+    "choices": [
+      {
+        "text": "Délais.",
+        "correct": true
+      },
+      {
+        "text": "Mauvaises intentions.",
+        "correct": false
+      },
+      {
+        "text": "Manque de compréhension.",
+        "correct": true
+      },
+      {
+        "text": "Rationalité limitée.",
+        "correct": true
+      }
+    ],
+    "answer": "Délais, compréhension, rationalité.",
+    "justification": "Complexité du système."
+  },
+
+  {
+    "id": "7.4.3",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Bonnes pratiques de modélisation ?",
+    "choices": [
+      {
+        "text": "Mesurer directement.",
+        "correct": false
+      },
+      {
+        "text": "Mots comparatifs.",
+        "correct": false
+      },
+      {
+        "text": "Élargir les limites.",
+        "correct": true
+      },
+      {
+        "text": "Commencer par les stocks.",
+        "correct": true
+      }
+    ],
+    "answer": "Limites + stocks.",
+    "justification": "Approche systémique."
+  },
+
+  {
+    "id": "7.4.4",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Solutions aux inondations ?",
+    "choices": [
+      {
+        "text": "Déforestation.",
+        "correct": false
+      },
+      {
+        "text": "Canaux.",
+        "correct": false
+      },
+      {
+        "text": "Réduction population.",
+        "correct": false
+      },
+      {
+        "text": "Reboisement.",
+        "correct": true
+      }
+    ],
+    "answer": "Reboisement.",
+    "justification": "Solution adaptée au contexte."
+  },
+
+  {
+    "id": "7.4.5",
+    "week": "Semaine 7 – Pensée systémique",
+    "question": "Effets du reboisement ?",
+    "choices": [
+      {
+        "text": "Ombre.",
+        "correct": true
+      },
+      {
+        "text": "Biodiversité.",
+        "correct": true
+      },
+      {
+        "text": "Réduction inondations.",
+        "correct": true
+      },
+      {
+        "text": "Moustiques.",
+        "correct": false
+      }
+    ],
+    "answer": "Les trois premiers.",
+    "justification": "Amélioration globale du système."
+  },
+
+
+
+  {
+    "id": "8.1.1",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Parmi les impacts environnementaux suivants, lesquels sont"
+      + "directement reliés au secteur de l’énergie ?",
+    "choices": [
+      {
+        "text": "Érosion de la biodiversité.",
+        "correct": true
+      },
+      {
+        "text": "Acidification des océans et modification de l’occupation des"
+          + "sols.",
+        "correct": true
+      },
+      {
+        "text": "Changement climatique.",
+        "correct": true
+      },
+      {
+        "text": "Diminution de la couche d’ozone.",
+        "correct": false
+      }
+    ],
+    "answer": "Biodiversité, acidification + sols, climat.",
+    "justification": "Le secteur énergétique affecte directement ces trois"
+      + "dimensions."
+  },
+
+  {
+    "id": "8.1.2",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Que permet la technologie ?",
+    "choices": [
+      {
+        "text": "Résoudre tous les problèmes sociaux.",
+        "correct": false
+      },
+      {
+        "text": "Mettre en place des modèles d’économie circulaire.",
+        "correct": true
+      },
+      {
+        "text": "Améliorer l’efficacité des méthodes de production.",
+        "correct": true
+      },
+      {
+        "text": "Éliminer la corruption.",
+        "correct": false
+      }
+    ],
+    "answer": "Économie circulaire + efficacité.",
+    "justification": "La technologie améliore mais ne résout pas tout."
+  },
+
+  {
+    "id": "8.1.3",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Quelles responsabilités accompagnent l’usage des technologies ?",
+    "choices": [
+      {
+        "text": "Évaluer les impacts.",
+        "correct": false
+      },
+      {
+        "text": "Prévenir les impacts négatifs graves.",
+        "correct": true
+      },
+      {
+        "text": "Utiliser avec précaution.",
+        "correct": true
+      },
+      {
+        "text": "Arrêter leur développement.",
+        "correct": false
+      }
+    ],
+    "answer": "Prévention + précaution.",
+    "justification": "Principe de précaution."
+  },
+
+  {
+    "id": "8.1.4",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Quels sont les leviers de la transition énergétique ?",
+    "choices": [
+      {
+        "text": "Substitution vers les renouvelables.",
+        "correct": true
+      },
+      {
+        "text": "Sobriété.",
+        "correct": true
+      },
+      {
+        "text": "Capture et séquestration du carbone.",
+        "correct": true
+      },
+      {
+        "text": "Recyclage et stockage.",
+        "correct": true
+      }
+    ],
+    "answer": "Tous.",
+    "justification": "Transition multidimensionnelle. 28  Durabilité EPFL"
+  },
+
+  {
+    "id": "8.1.5",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Qu’est-ce qui caractérise la durabilité forte ?",
+    "choices": [
+      {
+        "text": "Croissance illimitée.",
+        "correct": false
+      },
+      {
+        "text": "Zone d’équilibre du Donut.",
+        "correct": true
+      },
+      {
+        "text": "Plus d’énergie renouvelable uniquement.",
+        "correct": false
+      },
+      {
+        "text": "Primauté du bien commun.",
+        "correct": true
+      }
+    ],
+    "answer": "Donut + bien commun.",
+    "justification": "Respect des limites planétaires."
+  },
+
+  {
+    "id": "8.1.6",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Quelles mesures améliorent l’efficacité énergétique des bâtiments ?",
+    "choices": [
+      {
+        "text": "Chaudières à mazout.",
+        "correct": false
+      },
+      {
+        "text": "Pompes à chaleur.",
+        "correct": true
+      },
+      {
+        "text": "Isolation thermique.",
+        "correct": true
+      },
+      {
+        "text": "Baisser légèrement température.",
+        "correct": false
+      }
+    ],
+    "answer": "Pompes à chaleur + isolation.",
+    "justification": "Solutions structurelles."
+  },
+
+  {
+    "id": "8.2.1",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Quelles sont les limites des technologies ?",
+    "choices": [
+      {
+        "text": "Peu d’impact.",
+        "correct": false
+      },
+      {
+        "text": "Impact social et économique.",
+        "correct": true
+      },
+      {
+        "text": "Besoin de ressources + impact environnemental.",
+        "correct": true
+      },
+      {
+        "text": "Aucun impact social.",
+        "correct": false
+      }
+    ],
+    "answer": "Impacts + ressources.",
+    "justification": "Toute techno a un coût."
+  },
+
+  {
+    "id": "8.2.2",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Quels défis pour la transition énergétique ?",
+    "choices": [
+      {
+        "text": "Supprimer technologies.",
+        "correct": false
+      },
+      {
+        "text": "Prendre en compte impacts sociaux.",
+        "correct": true
+      },
+      {
+        "text": "Réduire GES.",
+        "correct": true
+      },
+      {
+        "text": "Garantir accès énergie.",
+        "correct": true
+      }
+    ],
+    "answer": "Les trois derniers.",
+    "justification": "Transition = équilibre complexe."
+  },
+
+  {
+    "id": "8.2.3",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Quelles dimensions du trilemme énergétique ?",
+    "choices": [
+      {
+        "text": "Économique.",
+        "correct": true
+      },
+      {
+        "text": "Sociale.",
+        "correct": true
+      },
+      {
+        "text": "Environnementale.",
+        "correct": true
+      },
+      {
+        "text": "Technologique.",
+        "correct": false
+      }
+    ],
+    "answer": "Éco + social + environnement.",
+    "justification": "Modèle du World Energy Council. 29  Durabilité EPFL"
+  },
+
+  {
+    "id": "8.2.4",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Source principale d’électricité en Suisse ?",
+    "choices": [
+      {
+        "text": "Nucléaire.",
+        "correct": false
+      },
+      {
+        "text": "Hydraulique.",
+        "correct": true
+      },
+      {
+        "text": "Solaire.",
+        "correct": false
+      },
+      {
+        "text": "Charbon.",
+        "correct": false
+      }
+    ],
+    "answer": "Hydraulique.",
+    "justification": "2/3 production."
+  },
+
+  {
+    "id": "8.2.5",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Solutions transport routier ?",
+    "choices": [
+      {
+        "text": "Maintenir mix actuel.",
+        "correct": false
+      },
+      {
+        "text": "Électrification.",
+        "correct": true
+      },
+      {
+        "text": "Carburants synthétiques.",
+        "correct": true
+      },
+      {
+        "text": "SUV électriques.",
+        "correct": false
+      }
+    ],
+    "answer": "Électrification + carburants.",
+    "justification": "Solutions réalistes."
+  },
+
+  {
+    "id": "8.2.6",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Énergies renouvelables compétitives ?",
+    "choices": [
+      {
+        "text": "Éolien terrestre.",
+        "correct": true
+      },
+      {
+        "text": "Power-to-X.",
+        "correct": false
+      },
+      {
+        "text": "Géothermie profonde.",
+        "correct": false
+      },
+      {
+        "text": "Photovoltaïque.",
+        "correct": true
+      }
+    ],
+    "answer": "Éolien + solaire.",
+    "justification": "Les plus matures."
+  },
+
+  {
+    "id": "8.3.1",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Stockage chimique d’énergie ?",
+    "choices": [
+      {
+        "text": "Hydrogénation.",
+        "correct": false
+      },
+      {
+        "text": "Électrolyse (H2).",
+        "correct": true
+      },
+      {
+        "text": "Méthanation.",
+        "correct": true
+      },
+      {
+        "text": "Uranium.",
+        "correct": false
+      }
+    ],
+    "answer": "Électrolyse + méthanation.",
+    "justification": "Conversion chimique."
+  },
+
+  {
+    "id": "8.3.2",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Effet rebond ?",
+    "choices": [
+      {
+        "text": "LED = baisse conso.",
+        "correct": false
+      },
+      {
+        "text": "Glaces allégées →plus consommées.",
+        "correct": true
+      },
+      {
+        "text": "Charbon après machine vapeur.",
+        "correct": true
+      },
+      {
+        "text": "Température augmente après PAC.",
+        "correct": true
+      }
+    ],
+    "answer": "Les trois derniers.",
+    "justification": "Gain →surconsommation. 30  Durabilité EPFL"
+  },
+
+  {
+    "id": "8.3.3",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Principe de précaution ?",
+    "choices": [
+      {
+        "text": "Augmenter CFC.",
+        "correct": false
+      },
+      {
+        "text": "Capturer CO2.",
+        "correct": true
+      },
+      {
+        "text": "Réduire pesticides.",
+        "correct": true
+      },
+      {
+        "text": "Déployer 5G massivement.",
+        "correct": false
+      }
+    ],
+    "answer": "CO2 + pesticides.",
+    "justification": "Prévenir les risques."
+  },
+
+  {
+    "id": "8.3.4",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Risques géo-ingénierie ?",
+    "choices": [
+      {
+        "text": "Réduction immédiate CO2.",
+        "correct": false
+      },
+      {
+        "text": "Scénarios catastrophiques.",
+        "correct": true
+      },
+      {
+        "text": "Effets imprévisibles.",
+        "correct": true
+      },
+      {
+        "text": "Détournement attention.",
+        "correct": true
+      }
+    ],
+    "answer": "Les trois derniers.",
+    "justification": "Risques majeurs."
+  },
+
+  {
+    "id": "8.3.5",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Capture du CO2 ?",
+    "choices": [
+      {
+        "text": "Photosynthèse.",
+        "correct": true
+      },
+      {
+        "text": "Déforestation.",
+        "correct": false
+      },
+      {
+        "text": "Captage avec amines.",
+        "correct": true
+      },
+      {
+        "text": "Plus de renouvelables.",
+        "correct": false
+      }
+    ],
+    "answer": "Photosynthèse + capture.",
+    "justification": "Naturelle + artificielle."
+  },
+
+  {
+    "id": "8.3.6",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Ressources minérales ?",
+    "choices": [
+      {
+        "text": "Réduction coûts.",
+        "correct": false
+      },
+      {
+        "text": "Risques géopolitiques.",
+        "correct": true
+      },
+      {
+        "text": "Dépendance pays.",
+        "correct": true
+      },
+      {
+        "text": "Disponibilité accrue.",
+        "correct": false
+      }
+    ],
+    "answer": "Géopolitique + dépendance.",
+    "justification": "Répartition inégale."
+  },
+
+  {
+    "id": "8.3.7",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Économie circulaire ?",
+    "choices": [
+      {
+        "text": "Collage non recyclable.",
+        "correct": false
+      },
+      {
+        "text": "Recyclage batteries.",
+        "correct": true
+      },
+      {
+        "text": "Récupération matériaux.",
+        "correct": true
+      },
+      {
+        "text": "Export déchets.",
+        "correct": false
+      }
+    ],
+    "answer": "Recyclage + récupération.",
+    "justification": "Réutilisation maximale. 31  Durabilité EPFL"
+  },
+
+  {
+    "id": "8.4.1",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Limite NON impactée par énergie ?",
+    "choices": [
+      {
+        "text": "Couche d’ozone.",
+        "correct": true
+      },
+      {
+        "text": "Acidification océans.",
+        "correct": false
+      },
+      {
+        "text": "Climat.",
+        "correct": false
+      },
+      {
+        "text": "Nouvelles entités.",
+        "correct": false
+      }
+    ],
+    "answer": "Ozone.",
+    "justification": "Impact indirect faible."
+  },
+
+  {
+    "id": "8.4.2",
+    "week": "Semaine 8 – Leviers technologiques de la durabilité",
+    "question": "Source renouvelable la plus utilisée ?",
+    "choices": [
+      {
+        "text": "Biomasse.",
+        "correct": false
+      },
+      {
+        "text": "Solaire.",
+        "correct": false
+      },
+      {
+        "text": "Éolien.",
+        "correct": false
+      },
+      {
+        "text": "Hydroélectricité.",
+        "correct": true
+      }
+    ],
+    "answer": "Hydroélectricité.",
+    "justification": "Dominante mondiale."
+  },
+
+
+
+  {
+    "id": "9.1",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Quels éléments sont considérés comme des intrants dans un système"
+      + "économique ?",
+    "choices": [
+      {
+        "text": "Machines et idées",
+        "correct": true
+      },
+      {
+        "text": "Ressources naturelles et capital humain",
+        "correct": true
+      },
+      {
+        "text": "Pollution de l’air",
+        "correct": false
+      },
+      {
+        "text": "Produits de consommation et services",
+        "correct": false
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  },
+
+  {
+    "id": "9.2",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Qu’est-ce qui caractérise le développement durable selon les"
+      + "économistes ?",
+    "choices": [
+      {
+        "text": "Le bien-être d’aujourd’hui qui compromet le futur",
+        "correct": false
+      },
+      {
+        "text": "Réduction de l’utilisation des ressources naturelles",
+        "correct": false
+      },
+      {
+        "text": "Augmentation des biens immatériels",
+        "correct": false
+      },
+      {
+        "text": "Maintien de la satisfaction à travers le temps",
+        "correct": true
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  },
+
+  {
+    "id": "9.3",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Quelles peuvent être des exemples d’externalités négatives ?",
+    "choices": [
+      {
+        "text": "Recyclage des déchets",
+        "correct": false
+      },
+      {
+        "text": "Production d’énergie solaire",
+        "correct": false
+      },
+      {
+        "text": "Conduite de voitures à essence",
+        "correct": true
+      },
+      {
+        "text": "Pollution de l’air et déforestation",
+        "correct": true
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  },
+
+  {
+    "id": "9.4",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Quels leviers économiques peuvent être utilisés pour résoudre les"
+      + "problèmes environnementaux et sociaux ?",
+    "choices": [
+      {
+        "text": "Subvention aux industries polluantes",
+        "correct": false
+      },
+      {
+        "text": "Modifier la demande (goûts des consommateurs)",
+        "correct": true
+      },
+      {
+        "text": "Mise en œuvre de politiques publiques",
+        "correct": true
+      },
+      {
+        "text": "Nouvelles technologies uniquement",
+        "correct": false
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  },
+
+  {
+    "id": "9.5",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Quels éléments caractérisent un système de marché durable ?",
+    "choices": [
+      {
+        "text": "Absence de régulation étatique",
+        "correct": false
+      },
+      {
+        "text": "Dépendance aux ressources non renouvelables",
+        "correct": false
+      },
+      {
+        "text": "Équilibre entre l’offre et la demande",
+        "correct": true
+      },
+      {
+        "text": "Inclusion des externalités dans les prix",
+        "correct": true
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  },
+
+  {
+    "id": "9.6",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Quelles peuvent être les causes des échecs de marché ? 32 "
+      + "Durabilité EPFL",
+    "choices": [
+      {
+        "text": "Surutilisation des ressources",
+        "correct": false
+      },
+      {
+        "text": "Externalités négatives",
+        "correct": true
+      },
+      {
+        "text": "Absence de capital physique",
+        "correct": false
+      },
+      {
+        "text": "Technologies modernes",
+        "correct": false
+      },
+      {
+        "text": "Problèmes d’action collective",
+        "correct": false
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  },
+
+  {
+    "id": "9.7",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Parmi les propositions suivantes, lesquelles sont des exemples de la"
+      + "tragédie des communs ?",
+    "choices": [
+      {
+        "text": "Conduite de voitures à essence",
+        "correct": true
+      },
+      {
+        "text": "Déforestation et surpêche",
+        "correct": true
+      },
+      {
+        "text": "Production d’énergie solaire",
+        "correct": false
+      },
+      {
+        "text": "Utilisation de voitures électriques",
+        "correct": false
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  },
+
+  {
+    "id": "9.8",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Quels sont les risques environnementaux liés aux systèmes"
+      + "économiques ?",
+    "choices": [
+      {
+        "text": "Surutilisation des intrants",
+        "correct": true
+      },
+      {
+        "text": "Production de biens de consommation",
+        "correct": false
+      },
+      {
+        "text": "Génération d’externalités négatives",
+        "correct": true
+      },
+      {
+        "text": "Augmentation du capital humain",
+        "correct": false
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  },
+
+  {
+    "id": "9.9",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Quels sont les effets des taxes pigouviennes sur le marché ?",
+    "choices": [
+      {
+        "text": "Diminution des revenus de l’État",
+        "correct": false
+      },
+      {
+        "text": "Réduction de la quantité produite",
+        "correct": true
+      },
+      {
+        "text": "Augmentation de la demande",
+        "correct": false
+      },
+      {
+        "text": "Augmentation du prix d’équilibre",
+        "correct": true
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  },
+
+  {
+    "id": "9.10",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Quels problèmes les externalités peuvent-elles causer sur le marché"
+      + "?",
+    "choices": [
+      {
+        "text": "Prix trop élevés pour les technologies propres",
+        "correct": true
+      },
+      {
+        "text": "Réduction des coûts de production",
+        "correct": false
+      },
+      {
+        "text": "Augmentation de la demande pour les biens durables",
+        "correct": false
+      },
+      {
+        "text": "Prix trop bas pour les technologies polluantes",
+        "correct": true
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  },
+
+  {
+    "id": "9.11",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Le dilemme du prisonnier...",
+    "choices": [
+      {
+        "text": "peut être surmonté en informant les joueurs des conséquences de"
+          + "leurs actions",
+        "correct": true
+      },
+      {
+        "text": "montre que la surutilisation des ressources est irrationnelle",
+        "correct": false
+      },
+      {
+        "text": "peut être surmonté en mettant un prix sur les mauvais"
+          + "comportements",
+        "correct": false
+      },
+      {
+        "text": "montre l’importance du laissez-faire",
+        "correct": false
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  },
+
+  {
+    "id": "9.12",
+    "week": "Semaine 9 – Leviers économiques et politiques",
+    "question": "Laquelle des propositions suivantes est vraie ?",
+    "choices": [
+      {
+        "text": "Une politique qui réduit la demande ou l’offre de voitures à"
+          + "essence augmente les prix et accélère la transition",
+        "correct": true
+      },
+      {
+        "text": "Réduire l’offre augmente le prix mais ne change pas la"
+          + "transition",
+        "correct": false
+      },
+      {
+        "text": "Réduire la demande augmente le prix",
+        "correct": false
+      },
+      {
+        "text": "Réduire offre ou demande diminue les prix",
+        "correct": false
+      }
+    ],
+    "answer": "",
+    "justification": ""
+  }
+];
+
+const state = new Map();
+const quiz = document.getElementById('quiz');
+const weekFilter = document.getElementById('weekFilter');
+const search = document.getElementById('search');
+
+[...new Set(QUESTIONS.map((q) => q.week).filter(Boolean))].forEach((week) => {
+  const option = document.createElement('option');
+  option.value = week;
+  option.textContent = week;
+  weekFilter.appendChild(option);
+});
+
+weekFilter.addEventListener('change', render);
+search.addEventListener('input', render);
+
+function filtered() {
+  const selectedWeek = weekFilter.value;
+  const searchText = search.value.toLowerCase().trim();
+
+  return QUESTIONS.filter((q) => {
+    const matchesWeek = selectedWeek === 'all' || q.week === selectedWeek;
+    const haystack = (q.question + ' ' + q.id + ' ' + q.week).toLowerCase();
+    const matchesSearch = !searchText || haystack.includes(searchText);
+
+    return matchesWeek && matchesSearch;
+  });
+}
+
+function render() {
+  quiz.innerHTML = '';
+
+  const list = filtered();
+  document.getElementById('total').textContent = list.length;
+
+  list.forEach((q) => quiz.appendChild(card(q)));
+  updateStats();
+}
+
+function card(q) {
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.id = 'q-' + q.id.replaceAll('.', '-');
+  div.innerHTML = `
+    <div class="meta">
+      <span>${escapeHtml(q.week || '')}</span>
+      <span>Question ${escapeHtml(q.id)}</span>
+    </div>
+    <div class="question">${escapeHtml(q.question)}</div>
+    <div class="choices">
+      ${q.choices
+        .map(
+          (c, i) => `
+            <label class="choice">
+              <input type="checkbox" data-q="${q.id}" data-i="${i}">
+              <span>${escapeHtml(c.text)}</span>
+            </label>
+          `
+        )
+        .join('')}
+    </div>
+    <div class="actions">
+      <button class="btn verify" onclick="verify('${q.id}')">
+        Vérifier
+      </button>
+      <button class="btn reset" onclick="resetQuestion('${q.id}')">
+        Effacer
+      </button>
+    </div>
+    <div class="feedback" id="fb-${q.id.replaceAll('.', '-')}"></div>
+  `;
+
+  return div;
+}
+
+function verify(id) {
+  const q = QUESTIONS.find((item) => item.id === id);
+  const cardElement = document.getElementById('q-' + id.replaceAll('.', '-'));
+  const inputs = [...cardElement.querySelectorAll('input[type=checkbox]')];
+  let ok = true;
+
+  inputs.forEach((input) => {
+    const index = Number(input.dataset.i);
+    const label = input.closest('.choice');
+
+    label.classList.remove('correctChoice', 'wrongChoice', 'missedChoice');
+
+    if (input.checked && q.choices[index].correct) {
+      label.classList.add('correctChoice');
+    }
+
+    if (input.checked && !q.choices[index].correct) {
+      label.classList.add('wrongChoice');
+      ok = false;
+    }
+
+    if (!input.checked && q.choices[index].correct) {
+      label.classList.add('missedChoice');
+      ok = false;
+    }
+  });
+
+  const feedback = document.getElementById('fb-' + id.replaceAll('.', '-'));
+  feedback.style.display = 'block';
+  feedback.className = 'feedback ' + (ok ? 'good' : 'bad');
+  feedback.innerHTML =
+    (ok ? '✅ Correct' : '❌ Pas encore')
+    + `<div class="explain"><b>Réponse :</b> ${escapeHtml(
+      q.answer || q.choices.filter((c) => c.correct).map((c) => c.text).join(' ; ')
+    )}${
+      q.justification
+        ? '<br><b>Justification :</b> ' + escapeHtml(q.justification)
+        : ''
+    }</div>`;
+
+  state.set(id, ok);
+  updateStats();
+}
+
+function resetQuestion(id) {
+  const cardElement = document.getElementById('q-' + id.replaceAll('.', '-'));
+
+  if (!cardElement) {
+    return;
+  }
+
+  cardElement.querySelectorAll('input').forEach((input) => {
+    input.checked = false;
+  });
+
+  cardElement.querySelectorAll('.choice').forEach((label) => {
+    label.classList.remove('correctChoice', 'wrongChoice', 'missedChoice');
+  });
+
+  const feedback = document.getElementById('fb-' + id.replaceAll('.', '-'));
+  feedback.style.display = 'none';
+  state.delete(id);
+  updateStats();
+}
+
+function resetAll() {
+  QUESTIONS.forEach((q) => resetQuestion(q.id));
+  state.clear();
+  updateStats();
+}
+
+function updateStats() {
+  const visible = filtered().map((q) => q.id);
+  const done = visible.filter((id) => state.has(id)).length;
+  const good = visible.filter((id) => state.get(id) === true).length;
+
+  document.getElementById('done').textContent = done;
+  document.getElementById('score').textContent = done
+    ? Math.round((100 * good) / done) + '%'
+    : '0%';
+}
+
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>'"]/g, (char) => {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[char];
+  });
+}
+
+render();
+    </script>
+  </body>
+</html>
