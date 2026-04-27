@@ -229,6 +229,61 @@ main {
   background: #fffbeb;
 }
 
+.errorNav {
+  position: fixed;
+  top: 50%;
+  right: 18px;
+  transform: translateY(-50%);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  background: #ffffffee;
+  box-shadow: 0 8px 24px #00000014;
+  backdrop-filter: blur(8px);
+}
+
+.errorNav[hidden] {
+  display: none;
+}
+
+.errorNavTitle {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b91c1c;
+}
+
+.errorNavList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.errorNavDot {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 4px;
+  background: #dc2626;
+  box-shadow: inset 0 0 0 1px #ffffffaa;
+  cursor: pointer;
+}
+
+.errorNavDot:hover,
+.errorNavDot:focus-visible {
+  background: #b91c1c;
+  outline: 2px solid #fecaca;
+  outline-offset: 2px;
+}
+
 @media (max-width: 700px) {
   header {
     padding: 14px 16px;
@@ -280,6 +335,20 @@ main {
   .controls .btn {
     min-width: 0;
   }
+
+  .errorNav {
+    right: 10px;
+    padding: 8px 6px;
+  }
+
+  .errorNavTitle {
+    font-size: 10px;
+  }
+
+  .errorNavDot {
+    width: 12px;
+    height: 12px;
+  }
 }
     </style>
   </head>
@@ -329,6 +398,11 @@ main {
 
       <div id="quiz"></div>
     </main>
+
+    <aside id="errorNav" class="errorNav" hidden aria-label="Questions fausses">
+      <span class="errorNavTitle">Fautes</span>
+      <div id="errorNavList" class="errorNavList"></div>
+    </aside>
 
     <script>
 const QUESTIONS = [
@@ -4172,6 +4246,8 @@ const weekFilter = document.getElementById('weekFilter');
 const search = document.getElementById('search');
 const headerPanel = document.getElementById('headerPanel');
 const mobileToggle = document.getElementById('mobileToggle');
+const errorNav = document.getElementById('errorNav');
+const errorNavList = document.getElementById('errorNavList');
 
 [...new Set(QUESTIONS.map((q) => q.week).filter(Boolean))].forEach((week) => {
   const option = document.createElement('option');
@@ -4238,6 +4314,7 @@ function render() {
 
   list.forEach((q) => quiz.appendChild(card(q)));
   updateStats();
+  updateErrorNav();
 }
 
 function card(q) {
@@ -4318,6 +4395,7 @@ function verify(id) {
 
   state.set(id, ok);
   updateStats();
+  updateErrorNav();
 }
 
 function resetQuestion(id) {
@@ -4339,12 +4417,14 @@ function resetQuestion(id) {
   feedback.style.display = 'none';
   state.delete(id);
   updateStats();
+  updateErrorNav();
 }
 
 function resetAll() {
   QUESTIONS.forEach((q) => resetQuestion(q.id));
   state.clear();
   updateStats();
+  updateErrorNav();
 }
 
 function updateStats() {
@@ -4356,6 +4436,36 @@ function updateStats() {
   document.getElementById('score').textContent = done
     ? Math.round((100 * good) / done) + '%'
     : '0%';
+}
+
+function updateErrorNav() {
+  const wrongQuestions = filtered().filter((q) => state.get(q.id) === false);
+
+  errorNavList.innerHTML = '';
+  errorNav.hidden = wrongQuestions.length === 0;
+
+  wrongQuestions.forEach((q) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'errorNavDot';
+    button.title = 'Question ' + q.id;
+    button.setAttribute('aria-label', 'Aller a la question ' + q.id);
+    button.addEventListener('click', () => scrollToQuestion(q.id));
+    errorNavList.appendChild(button);
+  });
+}
+
+function scrollToQuestion(id) {
+  const element = document.getElementById('q-' + id.replaceAll('.', '-'));
+
+  if (!element) {
+    return;
+  }
+
+  element.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center'
+  });
 }
 
 function escapeHtml(str) {
