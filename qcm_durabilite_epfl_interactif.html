@@ -386,7 +386,12 @@ main {
           <select id="weekFilter">
             <option value="all">Toutes les semaines</option>
           </select>
+          <select id="statusFilter">
+            <option value="all">Toutes les questions</option>
+            <option value="wrong">Questions fausses</option>
+          </select>
           <input id="search" placeholder="Rechercher une question...">
+          <button class="btn verify" onclick="showMistakes()">Réviser mes fautes</button>
           <button class="btn reset" onclick="resetAll()">Réinitialiser</button>
         </div>
       </div>
@@ -5689,9 +5694,12 @@ const QUESTIONS = [
   }
 ];
 
+const SAVE_KEY = 'qcm-durabilite-epfl-progress-v1';
 const state = new Map();
+const answers = new Map();
 const quiz = document.getElementById('quiz');
 const weekFilter = document.getElementById('weekFilter');
+const statusFilter = document.getElementById('statusFilter');
 const search = document.getElementById('search');
 const headerPanel = document.getElementById('headerPanel');
 const mobileToggle = document.getElementById('mobileToggle');
@@ -5705,12 +5713,23 @@ const errorNavList = document.getElementById('errorNavList');
   weekFilter.appendChild(option);
 });
 
-weekFilter.addEventListener('change', render);
-search.addEventListener('input', render);
+weekFilter.addEventListener('change', () => {
+  saveProgress();
+  render();
+});
+statusFilter.addEventListener('change', () => {
+  saveProgress();
+  render();
+});
+search.addEventListener('input', () => {
+  saveProgress();
+  render();
+});
 
 mobileToggle.addEventListener('click', toggleHeaderPanel);
 
 syncHeaderPanel();
+loadProgress();
 
 window.addEventListener('resize', syncHeaderPanel);
 
@@ -5744,14 +5763,16 @@ function syncHeaderPanel() {
 
 function filtered() {
   const selectedWeek = weekFilter.value;
+  const selectedStatus = statusFilter.value;
   const searchText = search.value.toLowerCase().trim();
 
   return QUESTIONS.filter((q) => {
     const matchesWeek = selectedWeek === 'all' || q.week === selectedWeek;
+    const matchesStatus = selectedStatus === 'all' || state.get(q.id) === false;
     const haystack = (q.question + ' ' + (q.displayId || q.id) + ' ' + q.week).toLowerCase();
     const matchesSearch = !searchText || haystack.includes(searchText);
 
-    return matchesWeek && matchesSearch;
+    return matchesWeek && matchesStatus && matchesSearch;
   });
 }
 
@@ -5776,6 +5797,7 @@ function render() {
     }
 
     quiz.appendChild(card(q));
+    restoreQuestionState(q.id);
   });
   updateStats();
   updateErrorNav();
@@ -5798,7 +5820,12 @@ function card(q) {
         .map(
           (c, i) => `
             <label class="choice">
-              <input type="checkbox" data-q="${q.id}" data-i="${i}">
+              <input
+                type="checkbox"
+                data-q="${q.id}"
+                data-i="${i}"
+                onchange="handleChoiceChange('${q.id}')"
+              >
               <span>${escapeHtml(c.text)}</span>
             </label>
           `
@@ -5817,6 +5844,19 @@ function card(q) {
   `;
 
   return div;
+}
+
+function handleChoiceChange(id) {
+  saveCurrentAnswers(id);
+
+  if (state.has(id)) {
+    clearVerification(id);
+    state.delete(id);
+  }
+
+  updateStats();
+  updateErrorNav();
+  saveProgress();
 }
 
 function verify(id) {
@@ -5860,8 +5900,10 @@ function verify(id) {
     }</div>`;
 
   state.set(id, ok);
+  saveCurrentAnswers(id);
   updateStats();
   updateErrorNav();
+  saveProgress();
 }
 
 function resetQuestion(id) {
@@ -5875,22 +5917,125 @@ function resetQuestion(id) {
     input.checked = false;
   });
 
-  cardElement.querySelectorAll('.choice').forEach((label) => {
-    label.classList.remove('correctChoice', 'wrongChoice', 'missedChoice');
-  });
-
-  const feedback = document.getElementById('fb-' + id.replaceAll('.', '-'));
-  feedback.style.display = 'none';
+  clearVerification(id);
   state.delete(id);
+  answers.delete(id);
   updateStats();
   updateErrorNav();
+  saveProgress();
 }
 
 function resetAll() {
   QUESTIONS.forEach((q) => resetQuestion(q.id));
   state.clear();
+  answers.clear();
+  weekFilter.value = 'all';
+  statusFilter.value = 'all';
+  search.value = '';
+  localStorage.removeItem(SAVE_KEY);
   updateStats();
   updateErrorNav();
+  render();
+}
+
+function showMistakes() {
+  weekFilter.value = 'all';
+  statusFilter.value = 'wrong';
+  search.value = '';
+  saveProgress();
+  render();
+}
+
+function clearVerification(id) {
+  const cardElement = document.getElementById('q-' + id.replaceAll('.', '-'));
+
+  if (!cardElement) {
+    return;
+  }
+
+  cardElement.querySelectorAll('.choice').forEach((label) => {
+    label.classList.remove('correctChoice', 'wrongChoice', 'missedChoice');
+  });
+
+  const feedback = document.getElementById('fb-' + id.replaceAll('.', '-'));
+  if (feedback) {
+    feedback.style.display = 'none';
+  }
+}
+
+function saveCurrentAnswers(id) {
+  const cardElement = document.getElementById('q-' + id.replaceAll('.', '-'));
+
+  if (!cardElement) {
+    return;
+  }
+
+  const selected = [...cardElement.querySelectorAll('input[type=checkbox]')]
+    .filter((input) => input.checked)
+    .map((input) => Number(input.dataset.i));
+
+  if (selected.length) {
+    answers.set(id, selected);
+  } else {
+    answers.delete(id);
+  }
+}
+
+function restoreQuestionState(id) {
+  const cardElement = document.getElementById('q-' + id.replaceAll('.', '-'));
+  const selected = answers.get(id) || [];
+
+  if (!cardElement) {
+    return;
+  }
+
+  cardElement.querySelectorAll('input[type=checkbox]').forEach((input) => {
+    input.checked = selected.includes(Number(input.dataset.i));
+  });
+
+  if (state.has(id)) {
+    verify(id);
+  }
+}
+
+function saveProgress() {
+  const payload = {
+    state: Object.fromEntries(state),
+    answers: Object.fromEntries(answers),
+    weekFilter: weekFilter.value,
+    statusFilter: statusFilter.value,
+    search: search.value
+  };
+
+  localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+}
+
+function loadProgress() {
+  const raw = localStorage.getItem(SAVE_KEY);
+
+  if (!raw) {
+    return;
+  }
+
+  try {
+    const payload = JSON.parse(raw);
+
+    Object.entries(payload.state || {}).forEach(([id, ok]) => {
+      state.set(id, Boolean(ok));
+    });
+
+    Object.entries(payload.answers || {}).forEach(([id, selected]) => {
+      if (Array.isArray(selected)) {
+        answers.set(id, selected);
+      }
+    });
+
+    weekFilter.value = payload.weekFilter || 'all';
+    statusFilter.value = payload.statusFilter || 'all';
+    search.value = payload.search || '';
+  } catch (error) {
+    localStorage.removeItem(SAVE_KEY);
+  }
 }
 
 function updateStats() {
